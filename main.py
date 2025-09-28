@@ -1,3 +1,6 @@
+import math
+
+
 def text_processing(filename):
     with open(filename, 'r', encoding='UTF-8') as text_file:
         text = text_file.read().lower()
@@ -107,6 +110,29 @@ def result_output_matrix(matrix, writefile):
         matrix_filewrite.write(result_row + '\n')
 
 
+def entropy_calculate(sequence):
+    n = len(sequence[0][0])
+
+    sequence_count = 0
+    for symbol in sequence:
+        sequence_count += symbol[1]
+
+    probability_H = []
+    for symbol in sequence:
+        freq = symbol[1]
+        probability = freq / sequence_count
+        probability_H.append(probability)
+
+    H = 0
+    for freq in probability_H:
+        H -= freq * math.log2(freq)
+
+    if n == 2:
+        H = H / 2
+
+    return H
+
+
 def main():
     cleaned_data = text_processing('data/data.txt')
     symbols_frequency = symbols_count(cleaned_data)
@@ -120,6 +146,12 @@ def main():
 
     result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
     result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
+
+    entropyH1 = entropy_calculate(symbols_frequency)
+    entropyH2_cross = entropy_calculate(bigrams_count_crossing_var)
+    entropyH2_not_cross = entropy_calculate(bigrams_count_not_crossing_var)
+
+    print(f'\nH1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
 
 
 if __name__ == '__main__':

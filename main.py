@@ -1,20 +1,15 @@
 import math
 
 
-def text_processing(filename):
+def text_processing(filename, _alphabet):
     with open(filename, 'r', encoding='UTF-8') as text_file:
         text = text_file.read().lower()
-
-    alphabet = [
-        'а', 'б', 'в', 'г', 'ґ', 'д', 'е', 'є', 'ж', 'з', 'и', 'і', 'ї', 'й', 'к', 'л', 'м',
-        'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ь', 'ю', 'я',
-    ]
 
     words = text.split()
 
     for index, word in enumerate(words):
         for symbol in word:
-            if symbol not in alphabet:
+            if symbol not in _alphabet:
                 word = word.replace(symbol, '')
             elif symbol == 'ґ':
                 word = word.replace(symbol, 'г')
@@ -24,10 +19,10 @@ def text_processing(filename):
     return ''.join(words)
 
 
-def symbols_count(text):
+def symbols_count(_text):
     symbol_count = {}
 
-    for symbol in text:
+    for symbol in _text:
         if symbol in symbol_count:
             symbol_count[symbol] += 1
         else:
@@ -37,34 +32,34 @@ def symbols_count(text):
     return sorted_symbol_count
 
 
-def bigrams_count_crossing(text):
+def bigrams_count_crossing(_text):
     bigrams_count = {}
     step = 1
 
-    for symbol in text:
-        bigram = symbol + text[step]
+    for symbol in _text:
+        bigram = symbol + _text[step]
         if bigram in bigrams_count:
             bigrams_count[bigram] += 1
         else:
             bigrams_count[bigram] = 1
-        if step != len(text) - 1:
+        if step != len(_text) - 1:
             step += 1
 
     sorted_bigrams_count = sorted(bigrams_count.items(), key=lambda key: key[1], reverse=True)
     return sorted_bigrams_count
 
 
-def bigrams_count_not_crossing(text):
+def bigrams_count_not_crossing(_text):
     bigrams_count = {}
     step = 1
 
-    if len(text) % 2 == 0:
+    if len(_text) % 2 == 0:
         end = None
     else:
         end = -1
 
-    for symbol in text[:end:2]:
-        bigram = symbol + text[step]
+    for symbol in _text[:end:2]:
+        bigram = symbol + _text[step]
         if bigram in bigrams_count:
             bigrams_count[bigram] += 1
         else:
@@ -133,8 +128,26 @@ def entropy_calculate(sequence):
     return H
 
 
+def index_of_coincidence(_text, _alphabet):
+    len_message = len(_text)
+
+    sum = 0
+    for symbol in _alphabet:
+        frequency = _text.count(symbol)
+        sum += frequency * (frequency - 1)
+
+    index = sum / (len_message * (len_message - 1))
+
+    return index
+
+
 def main():
-    cleaned_data = text_processing('data/data.txt')
+    alphabet = [
+        'а', 'б', 'в', 'г', 'ґ', 'д', 'е', 'є', 'ж', 'з', 'и', 'і', 'ї', 'й', 'к', 'л', 'м',
+        'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ь', 'ю', 'я',
+    ]
+
+    cleaned_data = text_processing('data/data.txt', alphabet)
     symbols_frequency = symbols_count(cleaned_data)
     result_output(symbols_frequency)
 
@@ -152,6 +165,7 @@ def main():
     entropyH2_not_cross = entropy_calculate(bigrams_count_not_crossing_var)
 
     print(f'\nH1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
+    print(f'Index of coincidence for cleaned text = {index_of_coincidence(cleaned_data, alphabet)}')
 
 
 if __name__ == '__main__':

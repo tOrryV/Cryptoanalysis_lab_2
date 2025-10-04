@@ -1,7 +1,9 @@
+from helper import euclidean_algorithm_extended as eae
+
+
 def encrypt(_alphabet, _text, a, b, crossing=False, pad_char=None):
     """
     Affine bigram cipher encryption without precomputing all bigrams.
-
     Mapping:
       For an alphabet of size m, a bigram (x1, x2) is encoded as X = x1*m + x2 (0..m^2-1).
       Encryption: Y = (a*X + b) mod m^2.
@@ -17,10 +19,11 @@ def encrypt(_alphabet, _text, a, b, crossing=False, pad_char=None):
                      crossing=False and len(_text) is odd. If None, defaults to _alphabet[0].
     :return: Ciphertext string.
     """
+
     m = len(_alphabet)
     nmod = m * m
 
-    if euclidean_algorithm_extended(a, nmod)[0] != 1:
+    if eae(a, nmod)[0] != 1:
         raise ValueError(f"'a'={a} must be coprime with m^2={nmod}")
 
     idx = {ch: i for i, ch in enumerate(_alphabet)}
@@ -57,12 +60,10 @@ def encrypt(_alphabet, _text, a, b, crossing=False, pad_char=None):
 def affine_bigram_decrypt(_alphabet, _text, a, b, crossing=False):
     """
     Affine bigram cipher decryption without precomputing all bigrams.
-
     Mapping:
       For an alphabet of size m, bigram (y1, y2) -> Y = y1*m + y2.
       Decryption: X = a_inv * (Y - b) mod m^2, where a_inv = a^{-1} mod m^2.
       Decoding back to chars: x1, x2 = divmod(X, m).
-
     :param _alphabet: Alphabet as a string; each character must be unique.
     :param _text: Ciphertext composed only of characters from _alphabet.
     :param a: Multiplicative key; must be coprime with m^2 (gcd(a, m^2) == 1).
@@ -71,13 +72,14 @@ def affine_bigram_decrypt(_alphabet, _text, a, b, crossing=False):
     :return: Decrypted text string (note: for non-overlapping mode and even-length input,
              output length equals input length; for crossing, output has length len(text)).
     """
+
     m = len(_alphabet)
     nmod = m * m
 
-    if euclidean_algorithm_extended(a, nmod)[0] != 1:
+    if eae(a, nmod)[0] != 1:
         raise ValueError(f"'a'={a} must be coprime with m^2={nmod}")
 
-    a_inv = euclidean_algorithm_extended(a, nmod)[1] % nmod
+    a_inv = eae(a, nmod)[1] % nmod
     idx = {ch: i for i, ch in enumerate(_alphabet)}
 
     if not crossing:
@@ -103,19 +105,3 @@ def affine_bigram_decrypt(_alphabet, _text, a, b, crossing=False):
         res.append(_alphabet[x1] + _alphabet[x2])
 
     return "".join(res)
-
-
-def euclidean_algorithm_extended(a, b):
-    """
-    Extended Euclidean Algorithm.
-    Returns a tuple (gcd, x, y) such that: a*x + b*y = gcd(a, b)
-    :param a: First integer
-    :param b: Second integer (modulus in our use case)
-    :return: (gcd, x, y)
-    """
-
-    if a == 0:
-        return b, 0, 1
-    else:
-        gcd, x, y = euclidean_algorithm_extended(b % a, a)
-        return gcd, y - (b // a) * x, x

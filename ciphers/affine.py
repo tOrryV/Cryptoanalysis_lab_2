@@ -1,3 +1,6 @@
+from helper import euclidean_algorithm_extended as eae
+
+
 def encrypt(_alphabet, _text, a, b):
     """
     Affine cipher encryption.
@@ -10,7 +13,7 @@ def encrypt(_alphabet, _text, a, b):
     """
 
     m = len(_alphabet)
-    if euclidean_algorithm_extended(a, m)[0] != 1:
+    if eae(a, m)[0] != 1:
         raise ValueError(f"'a'={a} must be coprime with the alphabet length m={m}")
     result = ''
     for ch in _text:
@@ -32,9 +35,9 @@ def decrypt(_alphabet, _text, a, b):
     """
 
     m = len(_alphabet)
-    if euclidean_algorithm_extended(a, m)[0] != 1:
+    if eae(a, m)[0] != 1:
         raise ValueError(f"'a'={a} must be coprime with the alphabet length m={m}")
-    a_inv = euclidean_algorithm_extended(a, m)[1] % m
+    a_inv = eae(a, m)[1] % m
 
     result = ''
     for ch in _text:
@@ -44,17 +47,3 @@ def decrypt(_alphabet, _text, a, b):
     return result
 
 
-def euclidean_algorithm_extended(a, b):
-    """
-    Extended Euclidean Algorithm.
-    Returns a tuple (gcd, x, y) such that: a*x + b*y = gcd(a, b)
-    :param a: First integer
-    :param b: Second integer (modulus in our use case)
-    :return: (gcd, x, y)
-    """
-
-    if a == 0:
-        return b, 0, 1
-    else:
-        gcd, x, y = euclidean_algorithm_extended(b % a, a)
-        return gcd, y - (b // a) * x, x

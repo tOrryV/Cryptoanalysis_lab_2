@@ -1,4 +1,8 @@
 import random
+from ciphers import affine as aff
+from ciphers import affine_bigram as affb
+from ciphers import vigenere as v
+from helper import generate_rand_text_from_cleaned_data
 
 
 def generate_random_text(_alphabet, text_len):
@@ -32,3 +36,22 @@ def generate_recurse_text(_alphabet, text_len):
         res += _alphabet[idx]
 
     return res
+
+
+def generate_text_by_vigenere(ukr_data, _alphabet, text_len, key_len):
+    """
+    Generate a random Ukrainian text fragment from the cleaned corpus and encrypt it with the Vigenère cipher.
+
+    :param ukr_data: Preprocessed Ukrainian text corpus (string)
+    :param _alphabet: Alphabet used for encryption/decryption
+    :param text_len: Length of the text to generate
+    :param key_len: Length of the random key for Vigenère encryption
+    :return: Encrypted text using the Vigenère cipher
+    """
+
+    text = generate_rand_text_from_cleaned_data(ukr_data, text_len)
+    print(text)
+    key = generate_random_text(_alphabet, key_len)
+    print(key)
+
+    return v.encrypt(_alphabet, text, key)

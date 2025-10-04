@@ -32,3 +32,28 @@ def generate_rand_text_from_cleaned_data(ukr_data, text_len):
     start = random.SystemRandom().randrange(len(ukr_data) - text_len + 1)
     return ukr_data[start:start + text_len]
 
+
+def _random_affine_keys(m):
+    """
+    Generate random valid keys (a, b) for the affine cipher with modulus m.
+
+    The affine cipher uses the encryption function:
+        E(x) = (a * x + b) mod m
+    where:
+        - a must be coprime with m (gcd(a, m) = 1)
+        - b can be any integer in the range [0, m-1]
+
+    :param m: Size of the alphabet (modulus). Must be a positive integer.
+    :return: A tuple (a, b) where:
+             - a is a randomly chosen integer such that gcd(a, m) = 1
+             - b is a randomly chosen integer in [0, m-1]
+    """
+
+    rnd = random.SystemRandom()
+    while True:
+        a = rnd.randrange(1, m)
+        if euclidean_algorithm_extended(a, m)[0] == 1:
+            break
+    b = rnd.randrange(0, m)
+
+    return a, b

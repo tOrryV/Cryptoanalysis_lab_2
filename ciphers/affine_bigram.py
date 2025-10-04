@@ -57,7 +57,7 @@ def encrypt(_alphabet, _text, a, b, crossing=False, pad_char=None):
     return "".join(res)
 
 
-def affine_bigram_decrypt(_alphabet, _text, a, b, crossing=False):
+def decrypt(_alphabet, _text, a, b, crossing=False):
     """
     Affine bigram cipher decryption without precomputing all bigrams.
     Mapping:

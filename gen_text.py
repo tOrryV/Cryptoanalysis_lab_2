@@ -2,7 +2,7 @@ import random
 from ciphers import affine as aff
 from ciphers import affine_bigram as affb
 from ciphers import vigenere as v
-from helper import generate_rand_text_from_cleaned_data
+from helper import generate_rand_text_from_cleaned_data, _random_affine_keys
 
 
 def generate_random_text(_alphabet, text_len):
@@ -50,8 +50,23 @@ def generate_text_by_vigenere(ukr_data, _alphabet, text_len, key_len):
     """
 
     text = generate_rand_text_from_cleaned_data(ukr_data, text_len)
-    print(text)
     key = generate_random_text(_alphabet, key_len)
-    print(key)
 
     return v.encrypt(_alphabet, text, key)
+
+
+def generate_text_by_affine(ukr_data, _alphabet, text_len):
+    """
+    Generate a random Ukrainian plaintext fragment from `ukr_data`
+    and encrypt it with the affine cipher E(x) = (a*x + b) mod m.
+
+    :param ukr_data: Cleaned Ukrainian text corpus (string)
+    :param _alphabet: Alphabet (sequence of characters) used by the cipher
+    :param text_len: Length of plaintext to sample from `ukr_data`
+    :return: Ciphertext (affine-encrypted)
+    """
+
+    a, b = _random_affine_keys(len(_alphabet))
+    text = generate_rand_text_from_cleaned_data(ukr_data, text_len)
+
+    return aff.encrypt(_alphabet, text, a, b)

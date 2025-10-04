@@ -33,27 +33,28 @@ def generate_rand_text_from_cleaned_data(ukr_data, text_len):
     return ukr_data[start:start + text_len]
 
 
-def _random_affine_keys(m):
+def _random_affine_keys(m, bigram=False):
     """
-    Generate random valid keys (a, b) for the affine cipher with modulus m.
+    Generate random valid keys (a, b) for the affine cipher.
 
-    The affine cipher uses the encryption function:
-        E(x) = (a * x + b) mod m
-    where:
-        - a must be coprime with m (gcd(a, m) = 1)
-        - b can be any integer in the range [0, m-1]
+    If `bigram` is False → generate keys for the classic affine cipher with modulus M = m.
+    If `bigram` is True  → generate keys for the affine bigram cipher with modulus M = m^2.
 
-    :param m: Size of the alphabet (modulus). Must be a positive integer.
-    :return: A tuple (a, b) where:
-             - a is a randomly chosen integer such that gcd(a, m) = 1
-             - b is a randomly chosen integer in [0, m-1]
+    :param m: Size of the alphabet (integer).
+    :param bigram: Boolean flag — if True, keys are generated for the bigram affine cipher (mod m^2);
+                   if False, keys are generated for the standard affine cipher (mod m).
+    :return: Tuple (a, b) where:
+             - a (int) — multiplicative key coprime with M
+             - b (int) — additive key in the range [0, M-1]
     """
 
+    M = m ** 2 if bigram else m
     rnd = random.SystemRandom()
-    while True:
-        a = rnd.randrange(1, m)
-        if euclidean_algorithm_extended(a, m)[0] == 1:
-            break
-    b = rnd.randrange(0, m)
 
+    while True:
+        a = rnd.randrange(1, M)
+        if euclidean_algorithm_extended(a, M)[0] == 1:
+            break
+
+    b = rnd.randrange(0, M)
     return a, b

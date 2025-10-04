@@ -70,3 +70,28 @@ def generate_text_by_affine(ukr_data, _alphabet, text_len):
     text = generate_rand_text_from_cleaned_data(ukr_data, text_len)
 
     return aff.encrypt(_alphabet, text, a, b)
+
+
+def generate_text_by_affine_bigram(ukr_data, _alphabet, text_len, crossing, pad_char):
+    """
+    Generate a random plaintext fragment from `ukr_data` and encrypt it
+    with the affine bigram cipher.
+
+    Bigram mapping for alphabet size m:
+       X = x1*m + x2     (X in [0, m^2 - 1])
+       Y = (a*X + b) mod m^2
+       (y1, y2) = divmod(Y, m)
+
+    :param ukr_data: Cleaned Ukrainian text corpus (string)
+    :param _alphabet: Alphabet as a string; each character must be unique
+    :param text_len: Length of plaintext to sample from `ukr_data`
+    :param crossing: If True — use overlapping bigrams; if False — non-overlapping pairs
+    :param pad_char: Optional padding char from `_alphabet` when crossing=False and len(text) is odd
+    :return: Ciphertext string (affine-bigram encrypted)
+    """
+
+    m = len(_alphabet)
+    a, b = _random_affine_keys(m, True)
+    text = generate_rand_text_from_cleaned_data(ukr_data, text_len)
+
+    return affb.encrypt(_alphabet, text, a, b, crossing=crossing, pad_char=pad_char)

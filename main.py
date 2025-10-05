@@ -1,4 +1,5 @@
 import math
+from helper import generate_multiple_texts
 
 
 def text_processing(filename, _alphabet):
@@ -189,7 +190,7 @@ def entropy_calculate(sequence):
 
     :param sequence: List of tuples [(symbol, frequency), ...].
                      Example: [('a', 10), ('b', 5), ...] or [('ab', 7), ('ba', 3), ...].
-    :return: Shannon entropy value (float).
+    :return: Shannon's entropy value (float).
     """
     n = len(sequence[0][0])
 
@@ -255,23 +256,29 @@ def main():
     for filename in filenames:
         cleaned_data += text_processing('data/' + filename, alphabet)
 
-    symbols_frequency = symbols_count(cleaned_data)
+    # symbols_frequency = symbols_count(cleaned_data)
     # result_output(symbols_frequency)
 
-    bigrams_count_crossing_var = bigrams_count_crossing(cleaned_data)
-    bigrams_count_not_crossing_var = bigrams_count_not_crossing(cleaned_data)
+    # bigrams_count_crossing_var = bigrams_count_crossing(cleaned_data)
+    # bigrams_count_not_crossing_var = bigrams_count_not_crossing(cleaned_data)
 
     # res_matrix_crossing = create_matrix(symbols_frequency, bigrams_count_crossing_var)
     # res_matrix_not_crossing = create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
     # result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
     # result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
 
-    entropyH1 = entropy_calculate(symbols_frequency)
-    entropyH2_cross = entropy_calculate(bigrams_count_crossing_var)
-    entropyH2_not_cross = entropy_calculate(bigrams_count_not_crossing_var)
+    # entropyH1 = entropy_calculate(symbols_frequency)
+    # entropyH2_cross = entropy_calculate(bigrams_count_crossing_var)
+    # entropyH2_not_cross = entropy_calculate(bigrams_count_not_crossing_var)
+    #
+    # print(f'H1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
+    # print(f'Index of coincidence for cleaned text: {index_of_coincidence(cleaned_data, alphabet)}')
 
-    print(f'H1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
-    print(f'Index of coincidence for cleaned text: {index_of_coincidence(cleaned_data, alphabet)}')
+    len_texts = [10, 100, 1000, 10000]
+    count_texts = [10000, 10000, 10000, 1000]
+
+    generated_random_texts = generate_multiple_texts(cleaned_data, len_texts, count_texts)
+    print(generated_random_texts)
 
 
 if __name__ == '__main__':

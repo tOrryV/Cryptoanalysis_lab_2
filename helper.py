@@ -58,3 +58,32 @@ def _random_affine_keys(m, bigram=False):
 
     b = rnd.randrange(0, M)
     return a, b
+
+
+def generate_multiple_texts(ukr_data, len_texts, count_texts):
+    """
+    Generate a large number of random text fragments of different lengths
+    from a preprocessed Ukrainian text corpus.
+
+    For each specified text length in `len_texts`, this function generates
+    the corresponding number of random substrings defined in `count_texts`.
+    Each substring is created by randomly selecting a starting position
+    within the given `ukr_data` and taking `text_len` characters.
+
+    :param ukr_data: (str) — The cleaned Ukrainian text corpus used as the source for generation.
+    :param len_texts: (list[int]) — A list of text lengths to generate.
+    :param count_texts: (list[int]) — A list of counts specifying how many texts to generate for each length.
+                          Must have the same length as `len_texts`.
+    :return: dict — A dictionary where each key is a text length (int)
+                   and the corresponding value is a list of generated random text fragments (list[str]).
+    """
+
+    results = {}
+    for text_len, count in zip(len_texts, count_texts):
+        texts = [
+            generate_rand_text_from_cleaned_data(ukr_data, text_len)
+            for _ in range(count)
+        ]
+        results[text_len] = texts
+
+    return results

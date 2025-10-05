@@ -1,4 +1,5 @@
 import math
+from gen_text import encrypt_texts_by_vigenere, encrypt_texts_by_affine, encrypt_texts_by_affine_bigram
 from helper import generate_multiple_texts
 
 
@@ -276,9 +277,14 @@ def main():
 
     len_texts = [10, 100, 1000, 10000]
     count_texts = [10000, 10000, 10000, 1000]
-
     generated_random_texts = generate_multiple_texts(cleaned_data, len_texts, count_texts)
-    print(generated_random_texts)
+
+    encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet)
+    print(encrypted_texts_by_vigenere[10][1])
+    encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
+    print(encrypted_texts_by_affine[10])
+    encrypted_texts_by_affine_bigram = encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
+    print(encrypted_texts_by_affine_bigram[10])
 
 
 if __name__ == '__main__':

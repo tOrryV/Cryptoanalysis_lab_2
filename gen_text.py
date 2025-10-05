@@ -61,7 +61,10 @@ def encrypt_texts_by_vigenere(texts_by_length, alphabet, vigenere_keys_len=None)
             for plaintext in texts:
                 key = generate_random_text(alphabet, key_len)
                 ciphertext = v.encrypt(alphabet, plaintext, key)
-                bucket.append(ciphertext)
+                bucket.append({
+                    "plaintext": plaintext,
+                    "ciphertext": ciphertext
+                })
             result[length][key_len] = bucket
     return result
 
@@ -88,7 +91,10 @@ def encrypt_texts_by_affine(texts_by_length, alphabet):
         for plaintext in texts:
             a, b = _random_affine_keys(m)
             ciphertext = aff.encrypt(alphabet, plaintext, a, b)
-            bucket.append(ciphertext)
+            bucket.append({
+                "plaintext": plaintext,
+                "ciphertext": ciphertext
+            })
         result[length] = bucket
 
     return result
@@ -120,7 +126,10 @@ def encrypt_texts_by_affine_bigram(texts_by_length, alphabet, crossing=True, pad
         for plaintext in texts:
             a, b = _random_affine_keys(m, True)
             ciphertext = affb.encrypt(alphabet, plaintext, a, b, crossing=crossing, pad_char=pad_char)
-            bucket.append(ciphertext)
+            bucket.append({
+                "plaintext": plaintext,
+                "ciphertext": ciphertext
+            })
         result[length] = bucket
 
     return result

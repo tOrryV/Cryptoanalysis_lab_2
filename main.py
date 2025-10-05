@@ -1,6 +1,7 @@
 import math
 from gen_text import encrypt_texts_by_vigenere, encrypt_texts_by_affine, encrypt_texts_by_affine_bigram
-from helper import generate_multiple_texts
+from helper import generate_multiple_texts_by_cleaned_text, select_unigram_sets_from_counts, \
+    select_bigram_sets_from_counts
 
 
 def text_processing(filename, _alphabet):
@@ -257,11 +258,12 @@ def main():
     for filename in filenames:
         cleaned_data += text_processing('data/' + filename, alphabet)
 
-    # symbols_frequency = symbols_count(cleaned_data)
+    symbols_frequency = symbols_count(cleaned_data)
+
     # result_output(symbols_frequency)
 
-    # bigrams_count_crossing_var = bigrams_count_crossing(cleaned_data)
-    # bigrams_count_not_crossing_var = bigrams_count_not_crossing(cleaned_data)
+    bigrams_count_crossing_var = bigrams_count_crossing(cleaned_data)
+    bigrams_count_not_crossing_var = bigrams_count_not_crossing(cleaned_data)
 
     # res_matrix_crossing = create_matrix(symbols_frequency, bigrams_count_crossing_var)
     # res_matrix_not_crossing = create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
@@ -271,20 +273,26 @@ def main():
     # entropyH1 = entropy_calculate(symbols_frequency)
     # entropyH2_cross = entropy_calculate(bigrams_count_crossing_var)
     # entropyH2_not_cross = entropy_calculate(bigrams_count_not_crossing_var)
-    #
+
     # print(f'H1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
     # print(f'Index of coincidence for cleaned text: {index_of_coincidence(cleaned_data, alphabet)}')
 
-    len_texts = [10, 100, 1000, 10000]
-    count_texts = [10000, 10000, 10000, 1000]
-    generated_random_texts = generate_multiple_texts(cleaned_data, len_texts, count_texts)
+    len_texts = [10, 100]
+    count_texts = [10, 1]
+    # generated_random_texts = generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
+    # print(generated_random_texts)
 
-    encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet)
-    print(encrypted_texts_by_vigenere[10][1])
-    encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
-    print(encrypted_texts_by_affine[10])
-    encrypted_texts_by_affine_bigram = encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
-    print(encrypted_texts_by_affine_bigram[10])
+    # encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet)
+    # encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
+    # encrypted_texts_by_affine_bigram = encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
+
+    unigram_sets = select_unigram_sets_from_counts(symbols_frequency)
+    forbidden_symbols = unigram_sets['forbidden']
+    popular_symbols = unigram_sets['popular']
+
+    bigram_sets = select_bigram_sets_from_counts(bigrams_count_not_crossing_var)
+    forbidden_bigram = bigram_sets['forbidden']
+    popular_bigram = bigram_sets['popular']
 
 
 if __name__ == '__main__':

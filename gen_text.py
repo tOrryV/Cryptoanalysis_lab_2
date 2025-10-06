@@ -36,7 +36,7 @@ def generate_recurse_text(_alphabet, text_len):
     return res
 
 
-def encrypt_texts_by_vigenere(texts_by_length, alphabet, vigenere_keys_len=None):
+def encrypt_texts_by_vigenere(texts_by_length, alphabet, vigenere_keys_len):
     """
     Encrypt pre-generated texts with the Vigenère cipher for multiple key lengths,
     returning an easy-to-index nested mapping: result[length][key_len] -> list[...].
@@ -50,22 +50,22 @@ def encrypt_texts_by_vigenere(texts_by_length, alphabet, vigenere_keys_len=None)
     :return: dict[int, dict[int, list]]
         result[length][key_len] -> list of ciphertexts (or dicts if include_meta=True).
     """
-    if vigenere_keys_len is None:
-        vigenere_keys_len = [1, 5, 10]
+    # if vigenere_keys_len is None:
+    #     vigenere_keys_len = [1, 5, 10]
 
     result = {}
     for length, texts in texts_by_length.items():
         result[length] = {}
-        for key_len in vigenere_keys_len:
-            bucket = []
-            for plaintext in texts:
-                key = generate_random_text(alphabet, key_len)
-                ciphertext = v.encrypt(alphabet, plaintext, key)
-                bucket.append({
-                    "plaintext": plaintext,
-                    "ciphertext": ciphertext
-                })
-            result[length][key_len] = bucket
+        # for key_len in vigenere_keys_len:
+        bucket = []
+        for plaintext in texts:
+            key = generate_random_text(alphabet, vigenere_keys_len)
+            ciphertext = v.encrypt(alphabet, plaintext, key)
+            bucket.append({
+                "plaintext": plaintext,
+                "ciphertext": ciphertext
+            })
+        result[length][vigenere_keys_len] = bucket
     return result
 
 

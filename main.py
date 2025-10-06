@@ -1,4 +1,6 @@
 import math
+
+from criteria import criteria_1_0, compute_alpha_beta
 from gen_text import encrypt_texts_by_vigenere, encrypt_texts_by_affine, encrypt_texts_by_affine_bigram
 from helper import generate_multiple_texts_by_cleaned_text, select_unigram_sets_from_counts, \
     select_bigram_sets_from_counts
@@ -277,22 +279,37 @@ def main():
     # print(f'H1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
     # print(f'Index of coincidence for cleaned text: {index_of_coincidence(cleaned_data, alphabet)}')
 
-    len_texts = [10, 100]
+    len_texts = [3, 10]
     count_texts = [10, 1]
-    # generated_random_texts = generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
-    # print(generated_random_texts)
+    generated_random_texts = generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
+    print(generated_random_texts)
 
-    # encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet)
+    # encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet, 1)
+    # print(encrypted_texts_by_vigenere)
     # encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
     # encrypted_texts_by_affine_bigram = encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
 
     unigram_sets = select_unigram_sets_from_counts(symbols_frequency)
     forbidden_symbols = unigram_sets['forbidden']
+    print(forbidden_symbols)
     popular_symbols = unigram_sets['popular']
 
     bigram_sets = select_bigram_sets_from_counts(bigrams_count_not_crossing_var)
-    forbidden_bigram = bigram_sets['forbidden']
-    popular_bigram = bigram_sets['popular']
+    forbidden_bigrams = bigram_sets['forbidden']
+    popular_bigrams = bigram_sets['popular']
+
+    # alpha, beta, A0, N0, A1, N1 = compute_alpha_beta(
+    #     generated_random_texts,  # H0
+    #     encrypted_texts_by_affine,  # H1
+    #     forbidden_symbols, forbidden_bigrams,
+    #     bigram=False,
+    # )
+
+    # print(f"A0/N0 = {A0}/{N0}  -> α = P(H1|H0) = {alpha:.4f}")
+    # print(f"A1/N1 = {A1}/{N1}  -> β = P(H0|H1) = {beta:.4f}")
+
+    criteria = criteria_1_0(generated_random_texts, forbidden_symbols, forbidden_bigrams)
+    print(criteria)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import math
 
-from criteria import criteria_1_0, criteria_1_1, criteria_1_2
+from criteria import criteria_1_0, criteria_1_1, criteria_1_2, criteria_1_3
 from gen_text import encrypt_texts_by_vigenere, encrypt_texts_by_affine, encrypt_texts_by_affine_bigram
 from helper import generate_multiple_texts_by_cleaned_text, select_unigram_sets_from_counts, \
     select_bigram_sets_from_counts
@@ -133,6 +133,25 @@ def bigram_count_not_crossing(_text):
 
     sorted_bigrams_count = sorted(bigrams_count.items(), key=lambda key: key[1], reverse=True)
     return sorted_bigrams_count
+
+
+def bigram_frequency(_bigram_counts):
+    """
+    Converts absolute bigram counts to relative frequencies.
+    - Takes a list of (bigram, count) pairs (e.g., the output of your bigram counting).
+    - Calculates the total number of bigrams by summing all counts.
+    - Divides each bigram's count by the total to get its relative frequency.
+    - Returns a list of (bigram, frequency) pairs, where frequency is rounded
+      to three decimal places. The order of bigrams remains the same as in the input.
+
+    :param _bigram_counts: List of tuples (bigram, count) representing the absolute
+                           number of occurrences of each bigram.
+    :return: List of tuples (bigram, frequency) where frequency is a float in [0,1],
+             rounded to three decimal places.
+    """
+    total = sum(count for _, count in _bigram_counts) if _bigram_counts else 1
+    freq = [(bg, round(count / total, 3)) for bg, count in _bigram_counts]
+    return freq
 
 
 def create_matrix(symbols, bigram):
@@ -281,10 +300,10 @@ def main():
 
     symbols_count = symbol_count(cleaned_data)
     symbols_frequency = symbol_frequency(symbols_count)
-
     # result_output(symbols_frequency)
 
     bigrams_count_crossing_var = bigram_count_crossing(cleaned_data)
+    bigrams_frequency = bigram_frequency(bigrams_count_crossing_var)
     # bigrams_count_not_crossing_var = bigram_count_not_crossing(cleaned_data)
 
     # res_matrix_crossing = create_matrix(symbols_frequency, bigrams_count_crossing_var)
@@ -300,7 +319,7 @@ def main():
     # print(f'Index of coincidence for cleaned text: {index_of_coincidence(cleaned_data, alphabet)}')
 
     len_texts = [10, 100]
-    count_texts = [10, 1]
+    count_texts = [10000, 1]
     generated_random_texts = generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
     # encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet, 1)
     encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
@@ -308,21 +327,24 @@ def main():
 
     unigram_sets = select_unigram_sets_from_counts(symbols_count)
     forbidden_symbols = unigram_sets['forbidden']
-    print(forbidden_symbols)
     popular_symbols = unigram_sets['popular']
 
     bigram_sets = select_bigram_sets_from_counts(bigrams_count_crossing_var)
     forbidden_bigrams = bigram_sets['forbidden']
     popular_bigrams = bigram_sets['popular']
 
-    # criteria_1_0_var = criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
-    # print(criteria_1_0_var)
+    criteria_1_0_var = criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
+    print(criteria_1_0_var)
 
-    # criteria_1_1_var = criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
-    # print(criteria_1_1_var)
+    criteria_1_1_var = criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
+    print(criteria_1_1_var)
 
-    criteria_1_2_var = criteria_1_2(encrypted_texts_by_affine, forbidden_symbols, symbols_frequency)
+    criteria_1_2_var = criteria_1_2(encrypted_texts_by_affine, None, None,
+                                    forbidden_bigrams, bigrams_frequency)
     print(criteria_1_2_var)
+
+    criteria_1_3_var = criteria_1_3(encrypted_texts_by_affine, forbidden_symbols, symbols_frequency)
+    print(criteria_1_3_var)
 
 
 if __name__ == '__main__':

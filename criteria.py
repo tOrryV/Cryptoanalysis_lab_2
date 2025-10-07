@@ -49,8 +49,14 @@ def criteria_1_1(generated_texts, kp=2, forbidden_symbols=None, forbidden_bigram
     return result
 
 
-def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None, forbidden_bigrams=None, bigrams_frequency=None):
+def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None,
+                 forbidden_bigrams=None, bigrams_frequency=None):
     result = {}
+
+    if forbidden_bigrams:
+        ref_freq = dict(bigrams_frequency)
+    else:
+        ref_freq = dict(symbols_frequency)
 
     for length, texts in generated_texts.items():
         plain_count = 0
@@ -67,7 +73,7 @@ def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None
 
                 for bg, cnt in found_plain.items():
                     freq = cnt / total_plain
-                    if freq > bigrams_frequency.get(bg, 0):
+                    if freq > ref_freq.get(bg, 0):
                         plain_count += 1
                         break
 
@@ -80,21 +86,19 @@ def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None
 
                 for bg, cnt in found_cipher.items():
                     freq = cnt / total_cipher
-                    if freq > bigrams_frequency.get(bg, 0):
+                    if freq > ref_freq.get(bg, 0):
                         cipher_count += 1
                         break
             else:
-                symbols_frequency = dict(symbols_frequency)
                 total_plain = len(text['plaintext'])
                 found_plain = {}
-                print(text['plaintext'])
                 for ch in text['plaintext']:
                     if ch in forbidden_symbols:
                         found_plain[ch] = found_plain.get(ch, 0) + 1
 
                 for ch, cnt in found_plain.items():
                     freq = cnt / total_plain
-                    if freq > symbols_frequency.get(ch, 0):
+                    if freq > ref_freq.get(ch, 0):
                         plain_count += 1
                         break
 
@@ -106,9 +110,65 @@ def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None
 
                 for ch, cnt in found_cipher.items():
                     freq = cnt / total_cipher
-                    if freq > symbols_frequency.get(ch, 0):
+                    if freq > ref_freq.get(ch, 0):
                         cipher_count += 1
                         break
+
+        result[length] = (plain_count, cipher_count)
+
+    return result
+
+
+def criteria_1_3(generated_texts, forbidden_symbols=None, symbols_frequency=None,
+                 forbidden_bigrams=None, bigrams_frequency=None):
+    result = {}
+
+    if forbidden_bigrams:
+        ref_freq = dict(bigrams_frequency)
+        Kp = sum(ref_freq.get(bg, 0) for bg in forbidden_bigrams)
+    else:
+        ref_freq = dict(symbols_frequency)
+        Kp = sum(ref_freq.get(ch, 0) for ch in forbidden_symbols)
+
+    for length, texts in generated_texts.items():
+        plain_count = 0
+        cipher_count = 0
+
+        for text in texts:
+            if forbidden_bigrams:
+                total = len(text['plaintext']) - 1
+                Fp = 0
+                for i in range(total):
+                    bg = text['plaintext'][i:i+2]
+                    if bg in forbidden_bigrams:
+                        Fp += 1
+                Fp = Fp / total
+
+                if Fp > Kp:
+                    plain_count += 1
+
+                total = len(text['ciphertext']) - 1
+                Fc = 0
+                for i in range(total):
+                    bg = text['ciphertext'][i:i+2]
+                    if bg in forbidden_bigrams:
+                        Fc += 1
+                Fc = Fc / total
+
+                if Fc > Kp:
+                    cipher_count += 1
+            else:
+                total = len(text['plaintext'])
+                Fp = sum(1 for ch in text['plaintext'] if ch in forbidden_symbols) / total
+
+                if Fp > Kp:
+                    plain_count += 1
+
+                total = len(text['ciphertext'])
+                Fc = sum(1 for ch in text['ciphertext'] if ch in forbidden_symbols) / total
+
+                if Fc > Kp:
+                    cipher_count += 1
 
         result[length] = (plain_count, cipher_count)
 

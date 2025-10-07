@@ -1,6 +1,6 @@
 import math
 
-from criteria import criteria_1_0, compute_alpha_beta
+from criteria import criteria_1_0, criteria_1_1, criteria_1_2
 from gen_text import encrypt_texts_by_vigenere, encrypt_texts_by_affine, encrypt_texts_by_affine_bigram
 from helper import generate_multiple_texts_by_cleaned_text, select_unigram_sets_from_counts, \
     select_bigram_sets_from_counts
@@ -25,17 +25,17 @@ def text_processing(filename, _alphabet):
 
     for index, word in enumerate(words):
         for symbol in word:
-            if symbol not in _alphabet:
-                word = word.replace(symbol, '')
-            elif symbol == 'ґ':
+            if symbol == 'ґ':
                 word = word.replace(symbol, 'г')
+            elif symbol not in _alphabet:
+                word = word.replace(symbol, '')
 
         words[index] = word
 
     return ''.join(words)
 
 
-def symbols_count(_text):
+def symbol_count(_text):
     """
     Counts the frequency of each character in the given text.
     - Iterates over all characters in the text.
@@ -45,19 +45,38 @@ def symbols_count(_text):
     :param _text: String containing the text to analyze.
     :return: List of tuples (symbol, count) sorted by count in descending order.
     """
-    symbol_count = {}
+    _symbol_count = {}
 
     for symbol in _text:
-        if symbol in symbol_count:
-            symbol_count[symbol] += 1
+        if symbol in _symbol_count:
+            _symbol_count[symbol] += 1
         else:
-            symbol_count[symbol] = 1
+            _symbol_count[symbol] = 1
 
-    sorted_symbol_count = sorted(symbol_count.items(), key=lambda items: items[1], reverse=True)
+    sorted_symbol_count = sorted(_symbol_count.items(), key=lambda items: items[1], reverse=True)
     return sorted_symbol_count
 
 
-def bigrams_count_crossing(_text):
+def symbol_frequency(_symbol_counts):
+    """
+    Converts absolute character counts to relative frequencies.
+    - Takes a list of (character, count) pairs (e.g., the output of symbol_count).
+    - Calculates the total number of characters by summing all counts.
+    - Divides each character's count by the total to get its relative frequency.
+    - Returns a list of (character, frequency) pairs, where frequency is rounded
+      to three decimal places. The order of symbols remains the same as in the input.
+
+    :param _symbol_counts: List of tuples (symbol, count) representing the absolute
+                           number of occurrences of each character.
+    :return: List of tuples (symbol, frequency) where frequency is a float in [0,1],
+             rounded to three decimal places.
+    """
+    total = sum(count for _, count in _symbol_counts) if _symbol_counts else 1
+    freq = [(sym, round(count / total, 3)) for sym, count in _symbol_counts]
+    return freq
+
+
+def bigram_count_crossing(_text):
     """
     Counts the frequency of overlapping (crossing) bigrams in the given text.
     - A bigram is a pair of consecutive characters (e.g., "аб", "ба").
@@ -84,7 +103,7 @@ def bigrams_count_crossing(_text):
     return sorted_bigrams_count
 
 
-def bigrams_count_not_crossing(_text):
+def bigram_count_not_crossing(_text):
     """
     Counts the frequency of non-overlapping bigrams in the given text.
     - A bigram is a pair of consecutive characters (e.g., "аб", "ба").
@@ -249,7 +268,7 @@ def main():
     """
 
     alphabet = [
-        'а', 'б', 'в', 'г', 'ґ', 'д', 'е', 'є', 'ж', 'з', 'и', 'і', 'ї', 'й', 'к', 'л', 'м',
+        'а', 'б', 'в', 'г', 'д', 'е', 'є', 'ж', 'з', 'и', 'і', 'ї', 'й', 'к', 'л', 'м',
         'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ь', 'ю', 'я',
     ]
 
@@ -260,56 +279,50 @@ def main():
     for filename in filenames:
         cleaned_data += text_processing('data/' + filename, alphabet)
 
-    symbols_frequency = symbols_count(cleaned_data)
+    symbols_count = symbol_count(cleaned_data)
+    symbols_frequency = symbol_frequency(symbols_count)
 
     # result_output(symbols_frequency)
 
-    bigrams_count_crossing_var = bigrams_count_crossing(cleaned_data)
-    bigrams_count_not_crossing_var = bigrams_count_not_crossing(cleaned_data)
+    bigrams_count_crossing_var = bigram_count_crossing(cleaned_data)
+    # bigrams_count_not_crossing_var = bigram_count_not_crossing(cleaned_data)
 
     # res_matrix_crossing = create_matrix(symbols_frequency, bigrams_count_crossing_var)
     # res_matrix_not_crossing = create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
     # result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
     # result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
-
+    #
     # entropyH1 = entropy_calculate(symbols_frequency)
     # entropyH2_cross = entropy_calculate(bigrams_count_crossing_var)
     # entropyH2_not_cross = entropy_calculate(bigrams_count_not_crossing_var)
-
+    #
     # print(f'H1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
     # print(f'Index of coincidence for cleaned text: {index_of_coincidence(cleaned_data, alphabet)}')
 
-    len_texts = [3, 10]
+    len_texts = [10, 100]
     count_texts = [10, 1]
     generated_random_texts = generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
-    print(generated_random_texts)
-
     # encrypted_texts_by_vigenere = encrypt_texts_by_vigenere(generated_random_texts, alphabet, 1)
-    # print(encrypted_texts_by_vigenere)
-    # encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
+    encrypted_texts_by_affine = encrypt_texts_by_affine(generated_random_texts, alphabet)
     # encrypted_texts_by_affine_bigram = encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
 
-    unigram_sets = select_unigram_sets_from_counts(symbols_frequency)
+    unigram_sets = select_unigram_sets_from_counts(symbols_count)
     forbidden_symbols = unigram_sets['forbidden']
     print(forbidden_symbols)
     popular_symbols = unigram_sets['popular']
 
-    bigram_sets = select_bigram_sets_from_counts(bigrams_count_not_crossing_var)
+    bigram_sets = select_bigram_sets_from_counts(bigrams_count_crossing_var)
     forbidden_bigrams = bigram_sets['forbidden']
     popular_bigrams = bigram_sets['popular']
 
-    # alpha, beta, A0, N0, A1, N1 = compute_alpha_beta(
-    #     generated_random_texts,  # H0
-    #     encrypted_texts_by_affine,  # H1
-    #     forbidden_symbols, forbidden_bigrams,
-    #     bigram=False,
-    # )
+    # criteria_1_0_var = criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
+    # print(criteria_1_0_var)
 
-    # print(f"A0/N0 = {A0}/{N0}  -> α = P(H1|H0) = {alpha:.4f}")
-    # print(f"A1/N1 = {A1}/{N1}  -> β = P(H0|H1) = {beta:.4f}")
+    # criteria_1_1_var = criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
+    # print(criteria_1_1_var)
 
-    criteria = criteria_1_0(generated_random_texts, forbidden_symbols, forbidden_bigrams)
-    print(criteria)
+    criteria_1_2_var = criteria_1_2(encrypted_texts_by_affine, forbidden_symbols, symbols_frequency)
+    print(criteria_1_2_var)
 
 
 if __name__ == '__main__':

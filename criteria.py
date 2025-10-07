@@ -1,7 +1,7 @@
-def criteria_1_0(text, forbidden_symbols=None, forbidden_bigrams=None):
+def criteria_1_0(generated_texts, forbidden_symbols=None, forbidden_bigrams=None):
     result = {}
 
-    for length, texts in text.items():
+    for length, texts in generated_texts.items():
         plain_count = 0
         cipher_count = 0
         for text in texts:
@@ -14,7 +14,6 @@ def criteria_1_0(text, forbidden_symbols=None, forbidden_bigrams=None):
                         cipher_count += 1
                         break
             else:
-
                 if any(symbol in forbidden_symbols for symbol in text['plaintext']):
                     plain_count += 1
                 if any(symbol in forbidden_symbols for symbol in text['ciphertext']):
@@ -44,6 +43,72 @@ def criteria_1_1(generated_texts, kp=2, forbidden_symbols=None, forbidden_bigram
                 plain_count += 1
             if len(found_cipher) >= kp:
                 cipher_count += 1
+
+        result[length] = (plain_count, cipher_count)
+
+    return result
+
+
+def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None, forbidden_bigrams=None, bigrams_frequency=None):
+    result = {}
+
+    for length, texts in generated_texts.items():
+        plain_count = 0
+        cipher_count = 0
+
+        for text in texts:
+            if forbidden_bigrams:
+                total_plain = len(text['plaintext']) - 1
+                found_plain = {}
+                for i in range(total_plain):
+                    bg = text['plaintext'][i:i+2]
+                    if bg in forbidden_bigrams:
+                        found_plain[bg] = found_plain.get(bg, 0) + 1
+
+                for bg, cnt in found_plain.items():
+                    freq = cnt / total_plain
+                    if freq > bigrams_frequency.get(bg, 0):
+                        plain_count += 1
+                        break
+
+                total_cipher = len(text['ciphertext']) - 1
+                found_cipher = {}
+                for i in range(total_cipher):
+                    bg = text['ciphertext'][i:i+2]
+                    if bg in forbidden_bigrams:
+                        found_cipher[bg] = found_cipher.get(bg, 0) + 1
+
+                for bg, cnt in found_cipher.items():
+                    freq = cnt / total_cipher
+                    if freq > bigrams_frequency.get(bg, 0):
+                        cipher_count += 1
+                        break
+            else:
+                symbols_frequency = dict(symbols_frequency)
+                total_plain = len(text['plaintext'])
+                found_plain = {}
+                print(text['plaintext'])
+                for ch in text['plaintext']:
+                    if ch in forbidden_symbols:
+                        found_plain[ch] = found_plain.get(ch, 0) + 1
+
+                for ch, cnt in found_plain.items():
+                    freq = cnt / total_plain
+                    if freq > symbols_frequency.get(ch, 0):
+                        plain_count += 1
+                        break
+
+                total_cipher = len(text['ciphertext'])
+                found_cipher = {}
+                for ch in text['ciphertext']:
+                    if ch in forbidden_symbols:
+                        found_cipher[ch] = found_cipher.get(ch, 0) + 1
+
+                for ch, cnt in found_cipher.items():
+                    freq = cnt / total_cipher
+                    if freq > symbols_frequency.get(ch, 0):
+                        cipher_count += 1
+                        break
 
         result[length] = (plain_count, cipher_count)
 

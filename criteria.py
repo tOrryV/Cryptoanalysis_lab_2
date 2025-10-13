@@ -1,3 +1,6 @@
+import helper as h
+
+
 def criteria_1_0(generated_texts, forbidden_symbols=None, forbidden_bigrams=None):
     result = {}
 
@@ -175,5 +178,32 @@ def criteria_1_3(generated_texts, forbidden_symbols=None, symbols_frequency=None
     return result
 
 
-def criteria_3_0(generated_texts, ):
-    pass
+def criteria_3_0(generated_texts, H, kH=0.1, bigrams=False):
+    result = {}
+
+    count_mode = h.bigram_count_crossing if bigrams else h.symbol_count
+    entropy = h.entropy_calculate
+
+    for length, texts in generated_texts.items():
+        H_curr = H[length] if isinstance(H, dict) else H
+        kH_curr = kH[length] if isinstance(kH, dict) else kH
+
+        plain_count = 0
+        cipher_count = 0
+
+        for text in texts:
+            p = text['plaintext']
+            c = text['ciphertext']
+
+            entropy_plain = entropy(count_mode(p))
+            entropy_cipher = entropy(count_mode(c))
+
+            if abs(entropy_plain - H_curr) > kH_curr:
+                plain_count += 1
+            if abs(entropy_cipher - H_curr) > kH_curr:
+                cipher_count += 1
+
+        result[length] = (plain_count, cipher_count)
+
+    return result
+

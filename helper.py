@@ -485,3 +485,46 @@ def result_output_matrix(matrix, writefile):
     for row in matrix:
         result_row = '|'.join([str(item).rjust(6) for item in row])
         matrix_filewrite.write(result_row + '\n')
+
+
+def make_clean_texts_by_L(full_text, lengths, overlap=0.5, max_samples_per_L=1000):
+    clean_texts_by_L = {}
+
+    for L in lengths:
+        step = int(L * (1 - overlap)) or 1
+        samples = []
+
+        for i in range(0, len(full_text) - L, step):
+            fragment = full_text[i:i + L]
+            if len(fragment.strip()) == L:
+                samples.append(fragment)
+            if len(samples) >= max_samples_per_L:
+                break
+
+        clean_texts_by_L[L] = samples
+
+    return clean_texts_by_L
+
+
+def compute_kH_dynamic(clean_texts_by_L, bigrams=False, alpha=0.05):
+    result_H = {}
+    result_kH = {}
+
+    count_mode = bigram_count_crossing if bigrams else symbol_count
+
+    for L, samples in clean_texts_by_L.items():
+        H_values = []
+        for sample in samples:
+            H_values.append(entropy_calculate(count_mode(sample)))
+
+        H_mean = sum(H_values) / len(H_values)
+        deltas = [abs(H - H_mean) for H in H_values]
+        deltas.sort()
+        idx = int((1 - alpha) * (len(deltas) - 1))
+        kH = deltas[idx]
+
+        result_H[L] = H_mean
+        result_kH[L] = kH
+
+    return result_H, result_kH
+

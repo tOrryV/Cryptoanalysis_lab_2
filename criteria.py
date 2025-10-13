@@ -173,3 +173,7 @@ def criteria_1_3(generated_texts, forbidden_symbols=None, symbols_frequency=None
         result[length] = (plain_count, cipher_count)
 
     return result
+
+
+def criteria_3_0(generated_texts, ):
+    pass

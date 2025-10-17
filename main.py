@@ -1,6 +1,7 @@
 import criteria as c
 import gen_text as gt
 import helper as h
+from error_rates import calc_error_rates_from_criteria
 
 
 def main():
@@ -47,11 +48,12 @@ def main():
     generated_random_texts = h.generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
     # encrypted_texts_by_vigenere = gt.encrypt_texts_by_vigenere(generated_random_texts, alphabet, 1)
     encrypted_texts_by_affine = gt.encrypt_texts_by_affine(generated_random_texts, alphabet)
-    encrypted_texts_by_affine_bigram = gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
+    # encrypted_texts_by_affine_bigram = gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
 
     unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
     forbidden_symbols = unigram_sets['forbidden']
     popular_symbols = unigram_sets['popular']
+
 
     bigram_sets = h.select_bigram_sets_from_counts(bigrams_count_crossing_var)
     forbidden_bigrams = bigram_sets['forbidden']
@@ -60,7 +62,7 @@ def main():
     # criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
     # print(criteria_1_0_var)
 
-    # criteria_1_1_var = c.criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
+    criteria_1_1_var = c.criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
     # print(criteria_1_1_var)
 
     # criteria_1_2_var = c.criteria_1_2(encrypted_texts_by_affine, None, None,
@@ -75,9 +77,11 @@ def main():
     # criteria_3_0_var = c.criteria_3_0(encrypted_texts_by_affine_bigram, H_dynamic, kH_dynamic)
     # print(criteria_3_0_var)
 
-    criteria_5_1_var = c.criteria_5_1(encrypted_texts_by_affine_bigram, 200, 60, None, bigrams_frequency)
-    print(criteria_5_1_var)
+    # criteria_5_1_var = c.criteria_5_1(encrypted_texts_by_affine_bigram, 200, 60, None, bigrams_frequency)
+    # print(criteria_5_1_var)
 
+    errors = calc_error_rates_from_criteria(criteria_1_1_var, len_texts, count_texts)
+    print(errors)
 
 if __name__ == '__main__':
     main()

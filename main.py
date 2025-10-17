@@ -1,13 +1,40 @@
 import criteria as c
 import gen_text as gt
 import helper as h
-from error_rates import calc_error_rates_from_criteria
+from error_rates import calc_error_rates_for_all_criteria
+
+
+def evaluate_all(encrypted_texts, forbidden_symbols, forbidden_bigrams, symbols_frequency, bigrams_frequency,
+                 H_dynamic_sym, kH_dynamic_sym, H_dynamic_big, kH_dynamic_big, win_len_1_1=2, n_5_1=200, m_5_1=60):
+    out = {"criteria_1_0_sym": c.criteria_1_0(encrypted_texts, forbidden_symbols),
+           "criteria_1_0_big": c.criteria_1_0(encrypted_texts, None, forbidden_bigrams),
+           "criteria_1_1_sym": c.criteria_1_1(encrypted_texts, win_len_1_1, forbidden_symbols),
+           "criteria_1_1_big": c.criteria_1_1(encrypted_texts, win_len_1_1, None, forbidden_bigrams),
+           "criteria_1_2_sym": c.criteria_1_2(encrypted_texts, forbidden_symbols, symbols_frequency),
+           "criteria_1_2_big": c.criteria_1_2(encrypted_texts, None, None,
+                                              forbidden_bigrams, bigrams_frequency),
+           "criteria_1_3_sym": c.criteria_1_3(encrypted_texts, forbidden_symbols, symbols_frequency),
+           "criteria_1_3_big": c.criteria_1_3(encrypted_texts, None, None,
+                                              forbidden_bigrams, bigrams_frequency),
+           "criteria_3_0_sym": c.criteria_3_0(encrypted_texts, H_dynamic_sym, kH_dynamic_sym),
+           "criteria_3_0_big": c.criteria_3_0(encrypted_texts, H_dynamic_big, kH_dynamic_big, True),
+           "criteria_5_1_sym": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, symbols_frequency),
+           "criteria_5_1_big": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, None, bigrams_frequency)}
+
+    return out
 
 
 def main():
     """
     To be continued...
     """
+
+    generate_mod = int(input(f'Choose mode for generating texts: \n\t1) Vigenere\n\t2) Affine\n\t3) Affine Bigram\n\t'
+                             f'4) Random sequence\n\t5) Recursive sequence\n'))
+
+    vigenere_mod = None
+    if generate_mod == 1:
+        vigenere_mod = int(input(f'Choose vigenere key len:\n\t1) 1\n\t2) 5\n\t3) 10\n'))
 
     alphabet = [
         'а', 'б', 'в', 'г', 'д', 'е', 'є', 'ж', 'з', 'и', 'і', 'ї', 'й', 'к', 'л', 'м',
@@ -46,53 +73,57 @@ def main():
     len_texts = [10, 100, 1000, 10000]
     count_texts = [10000, 10000, 10000, 1000]
     generated_random_texts = h.generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
-    # encrypted_texts_by_vigenere = gt.encrypt_texts_by_vigenere(generated_random_texts, alphabet, 1)
-    # encrypted_texts_by_affine = gt.encrypt_texts_by_affine(generated_random_texts, alphabet)
-    # encrypted_texts_by_affine_bigram = gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
 
     unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
     forbidden_symbols = unigram_sets['forbidden']
-    popular_symbols = unigram_sets['popular']
-
 
     bigram_sets = h.select_bigram_sets_from_counts(bigrams_count_crossing_var)
     forbidden_bigrams = bigram_sets['forbidden']
-    popular_bigrams = bigram_sets['popular']
 
+    clean_texts_by_L = h.make_clean_texts_by_L(cleaned_data, len_texts)
+    H_dynamic_sym, kH_dynamic_sym = h.compute_kH_dynamic(clean_texts_by_L)
+    H_dynamic_big, kH_dynamic_big = h.compute_kH_dynamic(clean_texts_by_L, True)
+
+    match generate_mod:
+        case 1:
+            if vigenere_mod not in {1, 2, 3}:
+                raise ValueError("Invalid input len of key for vigenere mode generating!")
+            encrypted = gt.encrypt_texts_by_vigenere(generated_random_texts, alphabet, vigenere_mod)
+        case 2:
+            encrypted = gt.encrypt_texts_by_affine(generated_random_texts, alphabet)
+        case 3:
+            encrypted = gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, True, alphabet[0])
+        case 4:
+            encrypted = gt.generate_multiple_random_texts(alphabet, generated_random_texts)
+        case 5:
+            encrypted = gt.generate_multiple_recurse_texts(alphabet, generated_random_texts)
+        case _:
+            raise ValueError(f"Unknown generate_mod: {generate_mod}")
+
+    all_criteria = evaluate_all(
+        encrypted,
+        forbidden_symbols=forbidden_symbols,
+        forbidden_bigrams=forbidden_bigrams,
+        symbols_frequency=symbols_frequency,
+        bigrams_frequency=bigrams_frequency,
+        H_dynamic_sym=H_dynamic_sym,
+        kH_dynamic_sym=kH_dynamic_sym,
+        H_dynamic_big=H_dynamic_big,
+        kH_dynamic_big=kH_dynamic_big,
+    )
+
+    all_errors = calc_error_rates_for_all_criteria(all_criteria, len_texts, count_texts)
+
+    # text_for_analysis = {
+    #     10: [gt.generate_of_non_coherent_text(10)]
+    # }
+    # encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
+    # print(encrypted_texts_by_affine)
     # criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
     # print(criteria_1_0_var)
-
-    # criteria_1_1_var = c.criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
-    # print(criteria_1_1_var)
-
-    # criteria_1_2_var = c.criteria_1_2(encrypted_texts_by_affine, None, None,
-    #                                   forbidden_bigrams, bigrams_frequency)
-    # print(criteria_1_2_var)
-
-    # criteria_1_3_var = c.criteria_1_3(encrypted_texts_by_affine, forbidden_symbols, symbols_frequency)
-    # print(criteria_1_3_var)
-
-    # clean_texts_by_L = h.make_clean_texts_by_L(cleaned_data, len_texts)
-    # H_dynamic, kH_dynamic = h.compute_kH_dynamic(clean_texts_by_L)
-    # criteria_3_0_var = c.criteria_3_0(encrypted_texts_by_affine_bigram, H_dynamic, kH_dynamic)
-    # print(criteria_3_0_var)
-
-    # criteria_5_1_var = c.criteria_5_1(encrypted_texts_by_affine_bigram, 200, 60, None, bigrams_frequency)
-    # print(criteria_5_1_var)
-
-    # errors = calc_error_rates_from_criteria(criteria_1_1_var, len_texts, count_texts)
+    # errors = calc_error_rates_from_criteria(criteria_1_0_var, [10], [1])
     # print(errors)
 
-    text_for_analysis = {
-        10: [gt.generate_of_non_coherent_text(10)]
-    }
-
-    encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
-    print(encrypted_texts_by_affine)
-    criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
-    print(criteria_1_0_var)
-    errors = calc_error_rates_from_criteria(criteria_1_0_var, [10], [1])
-    print(errors)
 
 if __name__ == '__main__':
     main()

@@ -338,35 +338,6 @@ def generate_multiple_texts_by_cleaned_text(ukr_data, len_texts, count_texts):
     return results
 
 
-# def generate_multiple_texts_from_alphabet(_alphabet, len_texts, count_texts):
-#     """
-#     Generate a large number of random text fragments of different lengths
-#     from a preprocessed Ukrainian text corpus.
-#
-#     For each specified text length in `len_texts`, this function generates
-#     the corresponding number of random substrings defined in `count_texts`.
-#     Each substring is created by randomly selecting a starting position
-#     within the given `ukr_data` and taking `text_len` characters.
-#
-#     :param _alphabet: list - Alphabet; all characters must be unique.
-#     :param len_texts: (list[int]) — A list of text lengths to generate.
-#     :param count_texts: (list[int]) — A list of counts specifying how many texts to generate for each length.
-#                           Must have the same length as `len_texts`.
-#     :return: dict — A dictionary where each key is a text length (int)
-#                    and the corresponding value is a list of generated random text fragments (list[str]).
-#     """
-#
-#     results = {}
-#     for text_len, count in zip(len_texts, count_texts):
-#         texts = [
-#             generate_random_text(_alphabet, text_len)
-#             for _ in range(count)
-#         ]
-#         results[text_len] = texts
-#
-#     return results
-
-
 def select_unigram_sets_from_counts(counts, forbid_mass=0.05, popular_coverage=0.80):
     """
     Use precomputed symbol counts to select:
@@ -527,4 +498,3 @@ def compute_kH_dynamic(clean_texts_by_L, bigrams=False, alpha=0.05):
         result_kH[L] = kH
 
     return result_H, result_kH
-

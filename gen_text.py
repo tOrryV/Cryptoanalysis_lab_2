@@ -133,3 +133,7 @@ def encrypt_texts_by_affine_bigram(texts_by_length, alphabet, crossing=True, pad
         result[length] = bucket
 
     return result
+
+
+def generate_of_non_coherent_text(len_text):
+    return 'а' * len_text

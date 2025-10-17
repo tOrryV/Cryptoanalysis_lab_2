@@ -47,7 +47,7 @@ def main():
     count_texts = [10000, 10000, 10000, 1000]
     generated_random_texts = h.generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
     # encrypted_texts_by_vigenere = gt.encrypt_texts_by_vigenere(generated_random_texts, alphabet, 1)
-    encrypted_texts_by_affine = gt.encrypt_texts_by_affine(generated_random_texts, alphabet)
+    # encrypted_texts_by_affine = gt.encrypt_texts_by_affine(generated_random_texts, alphabet)
     # encrypted_texts_by_affine_bigram = gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, False, alphabet[0])
 
     unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
@@ -62,7 +62,7 @@ def main():
     # criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
     # print(criteria_1_0_var)
 
-    criteria_1_1_var = c.criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
+    # criteria_1_1_var = c.criteria_1_1(encrypted_texts_by_affine, 2, forbidden_symbols)
     # print(criteria_1_1_var)
 
     # criteria_1_2_var = c.criteria_1_2(encrypted_texts_by_affine, None, None,
@@ -80,7 +80,18 @@ def main():
     # criteria_5_1_var = c.criteria_5_1(encrypted_texts_by_affine_bigram, 200, 60, None, bigrams_frequency)
     # print(criteria_5_1_var)
 
-    errors = calc_error_rates_from_criteria(criteria_1_1_var, len_texts, count_texts)
+    # errors = calc_error_rates_from_criteria(criteria_1_1_var, len_texts, count_texts)
+    # print(errors)
+
+    text_for_analysis = {
+        10: [gt.generate_of_non_coherent_text(10)]
+    }
+
+    encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
+    print(encrypted_texts_by_affine)
+    criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
+    print(criteria_1_0_var)
+    errors = calc_error_rates_from_criteria(criteria_1_0_var, [10], [1])
     print(errors)
 
 if __name__ == '__main__':

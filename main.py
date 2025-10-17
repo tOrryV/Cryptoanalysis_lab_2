@@ -26,6 +26,7 @@ def main():
 
     bigrams_count_crossing_var = h.bigram_count_crossing(cleaned_data)
     bigrams_frequency = h.bigram_frequency(bigrams_count_crossing_var)
+
     # bigrams_count_not_crossing_var = h.bigram_count_not_crossing(cleaned_data)
 
     # res_matrix_crossing = h.create_matrix(symbols_frequency, bigrams_count_crossing_var)
@@ -69,10 +70,13 @@ def main():
     # criteria_1_3_var = c.criteria_1_3(encrypted_texts_by_affine, forbidden_symbols, symbols_frequency)
     # print(criteria_1_3_var)
 
-    clean_texts_by_L = h.make_clean_texts_by_L(cleaned_data, len_texts)
-    H_dynamic, kH_dynamic = h.compute_kH_dynamic(clean_texts_by_L)
-    criteria_3_0_var = c.criteria_3_0(encrypted_texts_by_affine_bigram, H_dynamic, kH_dynamic)
-    print(criteria_3_0_var)
+    # clean_texts_by_L = h.make_clean_texts_by_L(cleaned_data, len_texts)
+    # H_dynamic, kH_dynamic = h.compute_kH_dynamic(clean_texts_by_L)
+    # criteria_3_0_var = c.criteria_3_0(encrypted_texts_by_affine_bigram, H_dynamic, kH_dynamic)
+    # print(criteria_3_0_var)
+
+    criteria_5_1_var = c.criteria_5_1(encrypted_texts_by_affine_bigram, 200, 60, None, bigrams_frequency)
+    print(criteria_5_1_var)
 
 
 if __name__ == '__main__':

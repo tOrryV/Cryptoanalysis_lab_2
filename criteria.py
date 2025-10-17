@@ -207,3 +207,48 @@ def criteria_3_0(generated_texts, H, kH=0.1, bigrams=False):
 
     return result
 
+
+def criteria_5_1(generated_texts, j, kempt, symbols_frequency=None, bigrams_frequency=None):
+    result = {}
+
+    if bigrams_frequency:
+        top = [bg for bg, _ in bigrams_frequency][:j]
+    else:
+        top = [ch for ch, _ in symbols_frequency][:j]
+    top_set = set(top)
+
+    for length, texts in generated_texts.items():
+        plain_count = 0
+        cipher_count = 0
+
+        for text in texts:
+            p = text['plaintext']
+            c = text['ciphertext']
+
+            if bigrams_frequency:
+                present_p = set()
+                for i in range(len(p) - 1):
+                    bg = p[i:i+2]
+                    if bg in top_set:
+                        present_p.add(bg)
+
+                present_c = set()
+                for i in range(len(c) - 1):
+                    bg = c[i:i+2]
+                    if bg in top_set:
+                        present_c.add(bg)
+            else:
+                present_p = {ch for ch in p if ch in top_set}
+                present_c = {ch for ch in c if ch in top_set}
+
+            f_empty_p = j - len(present_p)
+            f_empty_c = j - len(present_c)
+
+            if f_empty_p > kempt:
+                plain_count += 1
+            if f_empty_c > kempt:
+                cipher_count += 1
+
+        result[length] = (plain_count, cipher_count)
+
+    return result

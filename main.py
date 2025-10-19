@@ -2,6 +2,7 @@ import criteria as c
 import gen_text as gt
 import helper as h
 from error_rates import calc_error_rates_for_all_criteria
+from excel import generate_excel
 
 
 def evaluate_all(encrypted_texts, forbidden_symbols, forbidden_bigrams, symbols_frequency, bigrams_frequency,
@@ -24,18 +25,72 @@ def evaluate_all(encrypted_texts, forbidden_symbols, forbidden_bigrams, symbols_
     return out
 
 
+def _compute_errors_for_encrypted(encrypted, *, forbidden_symbols, forbidden_bigrams, symbols_frequency,
+                                  bigrams_frequency, H_dynamic_sym, kH_dynamic_sym, H_dynamic_big, kH_dynamic_big,
+                                  len_texts, count_texts):
+    all_criteria = evaluate_all(
+        encrypted,
+        forbidden_symbols=forbidden_symbols,
+        forbidden_bigrams=forbidden_bigrams,
+        symbols_frequency=symbols_frequency,
+        bigrams_frequency=bigrams_frequency,
+        H_dynamic_sym=H_dynamic_sym,
+        kH_dynamic_sym=kH_dynamic_sym,
+        H_dynamic_big=H_dynamic_big,
+        kH_dynamic_big=kH_dynamic_big,
+    )
+    return calc_error_rates_for_all_criteria(all_criteria, len_texts, count_texts)
+
+
+def run_all_generations_errors(*, generated_random_texts, alphabet, len_texts, count_texts, forbidden_symbols,
+                               forbidden_bigrams, symbols_frequency, bigrams_frequency, H_dynamic_sym, kH_dynamic_sym,
+                               H_dynamic_big, kH_dynamic_big, vigenere_keys=(1, 5, 10)):
+    out = {}
+
+    for k in vigenere_keys:
+        enc = gt.encrypt_texts_by_vigenere(generated_random_texts, alphabet, k)
+        out[f"vigenere_k{k}"] = _compute_errors_for_encrypted(
+            enc,
+            forbidden_symbols=forbidden_symbols,
+            forbidden_bigrams=forbidden_bigrams,
+            symbols_frequency=symbols_frequency,
+            bigrams_frequency=bigrams_frequency,
+            H_dynamic_sym=H_dynamic_sym,
+            kH_dynamic_sym=kH_dynamic_sym,
+            H_dynamic_big=H_dynamic_big,
+            kH_dynamic_big=kH_dynamic_big,
+            len_texts=len_texts,
+            count_texts=count_texts,
+        )
+
+    gens = [
+        ("affine",        gt.encrypt_texts_by_affine(generated_random_texts, alphabet)),
+        ("affine_bigram", gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, True, alphabet[0])),
+        ("random",        gt.generate_multiple_random_texts(alphabet, generated_random_texts)),
+        ("recursive",     gt.generate_multiple_recurse_texts(alphabet, generated_random_texts)),
+    ]
+    for name, enc in gens:
+        out[name] = _compute_errors_for_encrypted(
+            enc,
+            forbidden_symbols=forbidden_symbols,
+            forbidden_bigrams=forbidden_bigrams,
+            symbols_frequency=symbols_frequency,
+            bigrams_frequency=bigrams_frequency,
+            H_dynamic_sym=H_dynamic_sym,
+            kH_dynamic_sym=kH_dynamic_sym,
+            H_dynamic_big=H_dynamic_big,
+            kH_dynamic_big=kH_dynamic_big,
+            len_texts=len_texts,
+            count_texts=count_texts,
+        )
+
+    return out
+
+
 def main():
     """
     To be continued...
     """
-
-    generate_mod = int(input(f'Choose mode for generating texts: \n\t1) Vigenere\n\t2) Affine\n\t3) Affine Bigram\n\t'
-                             f'4) Random sequence\n\t5) Recursive sequence\n'))
-
-    vigenere_mod = None
-    if generate_mod == 1:
-        vigenere_mod = int(input(f'Choose vigenere key len:\n\t1) 1\n\t2) 5\n\t3) 10\n'))
-
     alphabet = [
         'а', 'б', 'в', 'г', 'д', 'е', 'є', 'ж', 'з', 'и', 'і', 'ї', 'й', 'к', 'л', 'м',
         'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ь', 'ю', 'я',
@@ -84,24 +139,11 @@ def main():
     H_dynamic_sym, kH_dynamic_sym = h.compute_kH_dynamic(clean_texts_by_L)
     H_dynamic_big, kH_dynamic_big = h.compute_kH_dynamic(clean_texts_by_L, True)
 
-    match generate_mod:
-        case 1:
-            if vigenere_mod not in {1, 2, 3}:
-                raise ValueError("Invalid input len of key for vigenere mode generating!")
-            encrypted = gt.encrypt_texts_by_vigenere(generated_random_texts, alphabet, vigenere_mod)
-        case 2:
-            encrypted = gt.encrypt_texts_by_affine(generated_random_texts, alphabet)
-        case 3:
-            encrypted = gt.encrypt_texts_by_affine_bigram(generated_random_texts, alphabet, True, alphabet[0])
-        case 4:
-            encrypted = gt.generate_multiple_random_texts(alphabet, generated_random_texts)
-        case 5:
-            encrypted = gt.generate_multiple_recurse_texts(alphabet, generated_random_texts)
-        case _:
-            raise ValueError(f"Unknown generate_mod: {generate_mod}")
-
-    all_criteria = evaluate_all(
-        encrypted,
+    all_errors = run_all_generations_errors(
+        generated_random_texts=generated_random_texts,
+        alphabet=alphabet,
+        len_texts=len_texts,
+        count_texts=count_texts,
         forbidden_symbols=forbidden_symbols,
         forbidden_bigrams=forbidden_bigrams,
         symbols_frequency=symbols_frequency,
@@ -112,7 +154,7 @@ def main():
         kH_dynamic_big=kH_dynamic_big,
     )
 
-    all_errors = calc_error_rates_for_all_criteria(all_criteria, len_texts, count_texts)
+    generate_excel(all_errors, "cipher_results_FP_FN.xlsx")
 
     # text_for_analysis = {
     #     10: [gt.generate_of_non_coherent_text(10)]

@@ -459,6 +459,29 @@ def result_output_matrix(matrix, writefile):
 
 
 def make_clean_texts_by_L(full_text, lengths, overlap=0.5, max_samples_per_L=1000):
+    """
+    Generate clean, non-overlapping text fragments by specified lengths.
+
+    This function divides a given text into fragments of multiple lengths `L`, producing
+    a dictionary {L: [fragments]} for further statistical or cryptographic analysis.
+    Fragments are extracted with partial overlap (default 50%), ensuring that each sample
+    contains exactly `L` valid characters (no trailing whitespace). The total number of
+    samples per length is capped by `max_samples_per_L`.
+
+    :param full_text: str
+        The complete source text to be segmented.
+    :param lengths: list[int]
+        List of fragment lengths L for which to generate samples.
+    :param overlap: float, optional (default=0.5)
+        Fractional overlap between consecutive fragments (0 ≤ overlap < 1).
+        For example, 0.5 means each new fragment starts halfway through the previous one.
+    :param max_samples_per_L: int, optional (default=1000)
+        Maximum number of fragments to generate per length L.
+    :return: dict[int, list[str]]
+        Mapping {L: [clean_fragments]} — for each length, a list of extracted text samples
+        of exact size L without whitespace contamination.
+    """
+
     clean_texts_by_L = {}
 
     for L in lengths:
@@ -478,6 +501,34 @@ def make_clean_texts_by_L(full_text, lengths, overlap=0.5, max_samples_per_L=100
 
 
 def compute_kH_dynamic(clean_texts_by_L, bigrams=False, alpha=0.05):
+    """
+    Compute dynamic entropy thresholds (H and kH) for Criterion 3.0 based on clean reference texts.
+
+    This function calculates the average entropy Hₗ and the dynamic deviation threshold kHₗ for
+    each text length L using clean text samples. The entropy is computed for each sample,
+    and deviations from the mean entropy are sorted. The threshold kHₗ corresponds to the
+    (1 - α)-quantile of these deviations, meaning that approximately α fraction of samples
+    will fall outside the acceptable entropy range.
+
+    These computed values (Hₗ, kHₗ) are later used in **Criterion 3.0** to determine whether
+    the entropy of an analyzed text significantly deviates from the reference distribution.
+
+    Mathematically:
+        Hₗ = (1 / N) * Σ H(sampleᵢ)
+        kHₗ = quantile(|H(sampleᵢ) - Hₗ|, 1 - α)
+
+    :param clean_texts_by_L: dict[int, list[str]]
+        Mapping {L: [samples]} — clean text fragments for each analyzed length.
+    :param bigrams: bool, optional (default=False)
+        If True, compute entropy based on bigram statistics instead of single symbols.
+    :param alpha: float, optional (default=0.05)
+        Significance level determining the quantile cutoff for kH (default 95% confidence).
+    :return: tuple[dict[int, float], dict[int, float]]
+        Two dictionaries:
+            - result_H: {L: mean entropy Hₗ for each text length}
+            - result_kH: {L: dynamic entropy deviation threshold kHₗ for each text length}
+    """
+
     result_H = {}
     result_kH = {}
 

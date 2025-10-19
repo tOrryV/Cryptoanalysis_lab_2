@@ -2,6 +2,31 @@ import helper as h
 
 
 def criteria_1_0(generated_texts, forbidden_symbols=None, forbidden_bigrams=None):
+    """
+    Criterion 1.0 — Detection of forbidden l-grams in plaintext and ciphertext sequences.
+
+    This criterion identifies the presence of *forbidden l-grams* — combinations of symbols
+    that are impossible or extremely rare in meaningful text. Such l-grams are defined by the
+    set A_prh ⊂ (Z_m)^l, which contains h_p forbidden elements determined from frequency analysis
+    of a natural language corpus.
+
+    Algorithm:
+        0. Compute frequencies of l-grams over the language alphabet Z_m and define the forbidden set A_prh.
+        1. Inspect the sequence X of length L (plaintext and ciphertext).
+        2. If any l-gram x ∈ A_prh appears in X, hypothesis H₁ is accepted (sequence contains forbidden l-gram);
+           otherwise, hypothesis H₀ is accepted.
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]} representing generated sequences.
+    :param forbidden_symbols: list[str] | None
+        List of forbidden single characters defining the forbidden set A_prh for l=1.
+    :param forbidden_bigrams: list[str] | None
+        List of forbidden bigrams defining the forbidden set A_prh for l=2.
+    :return: dict[int, tuple[int, int]]
+        Mapping {text_length: (plain_count, cipher_count)} where each tuple represents
+        the number of plaintexts and ciphertexts containing at least one forbidden l-gram.
+    """
+
     result = {}
 
     for length, texts in generated_texts.items():
@@ -28,6 +53,33 @@ def criteria_1_0(generated_texts, forbidden_symbols=None, forbidden_bigrams=None
 
 
 def criteria_1_1(generated_texts, kp=2, forbidden_symbols=None, forbidden_bigrams=None):
+    """
+    Criterion 1.1 — Detection of multiple forbidden l-grams exceeding a threshold kₚ.
+
+    This criterion extends Criterion 1.0 by introducing a threshold kₚ (1 < kₚ ≤ hₚ) —
+    the minimum number of distinct forbidden l-grams required to accept hypothesis H₁.
+    The set A_ap represents the set of forbidden l-grams actually encountered in the
+    analyzed sequence X. If |A_ap ∩ A_prh| ≥ kₚ, hypothesis H₁ is accepted; otherwise, H₀.
+
+    Algorithm:
+        0. Compute frequencies of l-grams over the alphabet Z_m and define the forbidden set A_prh.
+        1. Initialize A_ap as an empty set.
+        2. For each l-gram x ∈ X, if x ∈ A_prh, add it to A_ap.
+        3. If |A_ap ∩ A_prh| ≥ kₚ, accept H₁; otherwise, accept H₀.
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]} representing generated sequences.
+    :param kp: int
+        Threshold number of distinct forbidden l-grams required to trigger hypothesis H₁.
+    :param forbidden_symbols: list[str] | None
+        List of forbidden symbols defining A_prh for l=1.
+    :param forbidden_bigrams: list[str] | None
+        List of forbidden bigrams defining A_prh for l=2.
+    :return: dict[int, tuple[int, int]]
+        Mapping {text_length: (plain_count, cipher_count)}, where each tuple represents
+        the number of plaintexts and ciphertexts containing at least kₚ forbidden l-grams.
+    """
+
     result = {}
 
     for length, texts in generated_texts.items():
@@ -54,6 +106,36 @@ def criteria_1_1(generated_texts, kp=2, forbidden_symbols=None, forbidden_bigram
 
 def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None,
                  forbidden_bigrams=None, bigrams_frequency=None):
+    """
+    Criterion 1.2 — Detection of forbidden l-grams with abnormally high frequency.
+
+    This criterion extends the forbidden l-gram analysis by considering *frequency deviation*
+    from expected language statistics. For each forbidden l-gram x ∈ A_prh, its observed frequency fₓ
+    within the analyzed sequence X is compared with the reference frequency kₓ determined
+    from the natural language model. If any fₓ > kₓ, hypothesis H₁ is accepted (sequence exhibits
+    unnatural frequency distribution); otherwise, H₀ is accepted.
+
+    Algorithm:
+        0. Compute reference frequencies kₓ for all l-grams over alphabet Z_m (language model).
+        1. For each sequence X (plaintext and ciphertext), calculate observed frequencies fₓ
+           of all forbidden l-grams x ∈ A_prh.
+        2. If ∃x : fₓ > kₓ, accept H₁; otherwise, accept H₀.
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]} representing analyzed sequences.
+    :param forbidden_symbols: list[str] | None
+        List of forbidden single symbols (for l=1 analysis).
+    :param symbols_frequency: dict[str, float] | None
+        Reference frequencies of single symbols in natural language (kₓ for l=1).
+    :param forbidden_bigrams: list[str] | None
+        List of forbidden bigrams (for l=2 analysis).
+    :param bigrams_frequency: dict[str, float] | None
+        Reference frequencies of bigrams in natural language (kₓ for l=2).
+    :return: dict[int, tuple[int, int]]
+        Mapping {text_length: (plain_count, cipher_count)} — number of plaintexts and ciphertexts
+        where at least one forbidden l-gram exceeds its reference frequency threshold.
+    """
+
     result = {}
 
     if forbidden_bigrams:
@@ -124,6 +206,37 @@ def criteria_1_2(generated_texts, forbidden_symbols=None, symbols_frequency=None
 
 def criteria_1_3(generated_texts, forbidden_symbols=None, symbols_frequency=None,
                  forbidden_bigrams=None, bigrams_frequency=None):
+    """
+    Criterion 1.3 — Detection of forbidden l-grams based on total frequency deviation.
+
+    This criterion generalizes Criterion 1.2 by aggregating the frequencies of all forbidden
+    l-grams within the analyzed sequence. The cumulative observed frequency Fₚ is compared
+    to the expected cumulative reference frequency Kₚ derived from the natural language model.
+    If Fₚ > Kₚ, hypothesis H₁ is accepted (sequence shows excessive occurrence of forbidden
+    structures); otherwise, H₀ is accepted.
+
+    Mathematically:
+        Fₚ = Σ_{x∈A_prh} f(x)       — total observed frequency of forbidden l-grams
+        Kₚ = Σ_{x∈A_prh} kₓ         — total expected frequency from the language model
+    Decision rule:
+        If Fₚ > Kₚ → accept H₁
+        Else → accept H₀
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]} representing generated sequences.
+    :param forbidden_symbols: list[str] | None
+        List of forbidden single symbols forming the set A_prh (for l=1 analysis).
+    :param symbols_frequency: dict[str, float] | None
+        Reference frequencies of symbols kₓ in natural language (for l=1).
+    :param forbidden_bigrams: list[str] | None
+        List of forbidden bigrams forming the set A_prh (for l=2 analysis).
+    :param bigrams_frequency: dict[str, float] | None
+        Reference frequencies of bigrams kₓ in natural language (for l=2).
+    :return: dict[int, tuple[int, int]]
+        Mapping {text_length: (plain_count, cipher_count)} — number of plaintexts and ciphertexts
+        where the total observed frequency Fₚ of forbidden l-grams exceeds Kₚ.
+    """
+
     result = {}
 
     if forbidden_bigrams:
@@ -179,6 +292,27 @@ def criteria_1_3(generated_texts, forbidden_symbols=None, symbols_frequency=None
 
 
 def criteria_3_0(generated_texts, H, kH=0.1, bigrams=False):
+    """
+    Criterion 3.0 — Entropy deviation test for l-grams (symbols or bigrams).
+
+    Compute the per-symbol entropy Hₗ of the language model (reference) and compare it with
+    the entropy H′ₗ of each analyzed sequence X. If |H′ₗ − Hₗ| > k_H, accept hypothesis H₁
+    (sequence is non-linguistic/abnormal); otherwise accept H₀. When `bigrams=True`, entropy is
+    computed over crossing bigrams; otherwise over single symbols.
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]} of sequences to test.
+    :param H: float | dict[int, float]
+        Reference per-symbol entropy Hₗ of the language (scalar for all lengths or per-length dict).
+    :param kH: float | dict[int, float]
+        Allowed deviation threshold k_H (scalar or per-length dict).
+    :param bigrams: bool
+        If True, use bigram frequency counts; if False, use single-symbol counts.
+    :return: dict[int, tuple[int, int]]
+        Mapping {text_length: (plain_count, cipher_count)} — numbers of plaintexts and ciphertexts
+        whose entropy deviates from the reference by more than k_H.
+    """
+
     result = {}
 
     count_mode = h.bigram_count_crossing if bigrams else h.symbol_count
@@ -209,6 +343,36 @@ def criteria_3_0(generated_texts, H, kH=0.1, bigrams=False):
 
 
 def criteria_5_1(generated_texts, j, kempt, symbols_frequency=None, bigrams_frequency=None):
+    """
+    Criterion 5.1 — Frequency emptiness test for top-j frequent l-grams.
+
+    This criterion evaluates the representativeness of a sequence by checking how many of the most
+    frequent l-grams from the reference language (top j elements) do *not* appear in the analyzed
+    sequence X. The number of such “empty bins” (f_empt) is compared to a threshold k_empt.
+    If f_empt ≥ k_empt, hypothesis H₁ is accepted (sequence is abnormal or lacks typical patterns);
+    otherwise H₀ is accepted.
+
+    Mathematically:
+        f_empt = j - |{x ∈ B_frq ∩ X}|
+    Decision rule:
+        If f_empt ≥ k_empt → accept H₁
+        Else → accept H₀
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]} — test data sequences.
+    :param j: int
+        Number of top most frequent l-grams (from reference distribution) forming B_frq.
+    :param kempt: int
+        Threshold number of empty bins allowed before accepting H₁.
+    :param symbols_frequency: list[tuple[str, float]] | None
+        List of tuples (symbol, frequency) for single-character statistics.
+    :param bigrams_frequency: list[tuple[str, float]] | None
+        List of tuples (bigram, frequency) for bigram statistics.
+    :return: dict[int, tuple[int, int]]
+        Mapping {text_length: (plain_count, cipher_count)} — number of plaintexts and ciphertexts
+        where the number of missing frequent l-grams exceeds the threshold k_empt.
+    """
+
     result = {}
 
     if bigrams_frequency:

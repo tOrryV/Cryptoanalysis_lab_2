@@ -2,6 +2,19 @@ import pandas as pd
 
 
 def _flatten_cipher(cipher_dict):
+    """
+    Flatten a nested cipher metrics dictionary into a pandas DataFrame with columns
+    [L, Criteria, l, FP, FN], suitable for tabular representation and export.
+
+    :param cipher_dict: dict
+        Nested mapping of cipher results:
+        {criteria_key: {L: {"alpha": FP, "beta": FN}, ...}, ...}.
+        Keys must follow the pattern "criteria_x_y_sym" or "criteria_x_y_bigram".
+    :return: pandas.DataFrame
+        DF with columns ["L", "Criteria", "l", "FP", "FN"],
+        sorted by L, Criteria, and l.
+    """
+
     rows = []
     for crit_key, sizes in cipher_dict.items():
         parts = crit_key.split('_')
@@ -24,6 +37,17 @@ def _flatten_cipher(cipher_dict):
 
 
 def _pivot_df(df):
+    """
+    Convert a flat DataFrame with FP/FN values into a pivoted format suitable for Excel export,
+    splitting metrics by `l=1` and `l=2`.
+
+    :param df: pandas.DataFrame
+        Input DataFrame with columns ["L", "Criteria", "l", "FP", "FN"].
+    :return: pandas.DataFrame
+        Pivoted DataFrame with columns:
+        ["L", "Criteria", "FP (l=1)", "FN (l=1)", "FP (l=2)", "FN (l=2)"].
+    """
+
     fp = df.pivot_table(index=["L", "Criteria"], columns="l", values="FP", aggfunc="first")
     fn = df.pivot_table(index=["L", "Criteria"], columns="l", values="FN", aggfunc="first")
     for col in ["l=1", "l=2"]:
@@ -42,6 +66,19 @@ def _pivot_df(df):
 
 
 def generate_excel(results, output_path):
+    """
+    Generate a formatted Excel report summarizing cipher detection results for multiple ciphers.
+
+    :param results: dict
+        Mapping {cipher_name: cipher_block}, where each cipher_block is a nested dictionary
+        of criteria and values suitable for _flatten_cipher().
+    :param output_path: str | Path
+        File path for the generated Excel file.
+    :return: None
+        Writes formatted Excel sheets (one per cipher) with merged headers, adjusted column widths,
+        and grouped rows by text length L.
+    """
+
     pretty_names = {
         "vigenere_k1": "Sequence by Vigenere cipher (key length: 1)",
         "vigenere_k5": "Sequence by Vigenere cipher (key length: 5)",

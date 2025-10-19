@@ -37,6 +37,17 @@ def generate_recurse_text(_alphabet, text_len):
 
 
 def generate_multiple_random_texts(_alphabet, plaintexts_by_len):
+    """
+    Generate random ciphertext–plaintext pairs for each text length using generate_random_text.
+
+    :param _alphabet: list
+        Alphabet used for generating ciphertexts.
+    :param plaintexts_by_len: dict[int, list[str]]
+        Mapping {text_length: [plaintext1, plaintext2, ...]} — plaintexts grouped by length.
+    :return: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]}.
+    """
+
     results = {}
     for text_len, plaintexts in plaintexts_by_len.items():
         pairs = []
@@ -48,6 +59,16 @@ def generate_multiple_random_texts(_alphabet, plaintexts_by_len):
 
 
 def generate_multiple_recurse_texts(_alphabet, plaintexts_by_len):
+    """
+    Generate recursive ciphertext–plaintext pairs for each text length using generate_recurse_text.
+
+    :param _alphabet: list
+        Alphabet used for generating ciphertexts.
+    :param plaintexts_by_len: dict[int, list[str]]
+        Mapping {text_length: [plaintext1, plaintext2, ...]} — plaintexts grouped by length.
+    :return: dict[int, list[dict[str, str]]]
+        Mapping {text_length: [{"plaintext": ..., "ciphertext": ...}, ...]}.
+    """
 
     results = {}
     for text_len, plaintexts in plaintexts_by_len.items():
@@ -61,15 +82,15 @@ def generate_multiple_recurse_texts(_alphabet, plaintexts_by_len):
 
 def encrypt_texts_by_vigenere(texts_by_length, alphabet, vigenere_keys_len):
     """
-    Encrypt pre-generated texts with the Vigenère cipher for multiple key lengths,
+    Encrypt pre-generated texts with the Vigenere cipher for multiple key lengths,
     returning an easy-to-index nested mapping: result[length][key_len] -> list[...].
 
     :param texts_by_length: dict[int, list[str]]
         Mapping {text_length: [plaintext1, plaintext2, ...]} produced by generate_multiple_texts.
     :param alphabet: list
-        Alphabet used by the Vigenère cipher.
+        Alphabet used by the Vigenere cipher.
     :param vigenere_keys_len: Iterable[int] | None
-        Key lengths to use. Defaults to [1, 5, 10].
+        Key lengths to use.
     :return: dict[int, dict[int, list]]
         result[length][key_len] -> list of ciphertexts (or dicts if include_meta=True).
     """
@@ -138,6 +159,7 @@ def encrypt_texts_by_affine_bigram(texts_by_length, alphabet, crossing=True, pad
     :return: dict[int, list]
         result[length] -> list of ciphertexts (or dicts if include_meta=True).
     """
+
     m = len(alphabet)
     result = {}
 
@@ -156,4 +178,13 @@ def encrypt_texts_by_affine_bigram(texts_by_length, alphabet, crossing=True, pad
 
 
 def generate_of_non_coherent_text(len_text):
+    """
+    Generate a non-coherent text consisting of a single repeated character ('а').
+
+    :param len_text: int
+        Desired length of the generated text.
+    :return: str
+        String of length `len_text` composed entirely of the character 'а'.
+    """
+
     return 'а' * len_text

@@ -1,7 +1,7 @@
 import criteria as c
 import gen_text as gt
 import helper as h
-from error_rates import calc_error_rates_for_all_criteria
+from error_rates import calc_error_rates_for_all_criteria, calc_error_rates_from_criteria
 from excel import generate_excel
 
 
@@ -277,15 +277,12 @@ def main():
 
     generate_excel(all_errors, "results/cipher_results_FP_FN_test.xlsx")
 
-    # text_for_analysis = {
-    #     10: [gt.generate_of_non_coherent_text(10)]
-    # }
-    # encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
-    # print(encrypted_texts_by_affine)
-    # criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
-    # print(criteria_1_0_var)
-    # errors = calc_error_rates_from_criteria(criteria_1_0_var, [10], [1])
-    # print(errors)
+    print(f'====================== TASK 5 ======================')
+    text_for_analysis = { 10000: [gt.generate_of_non_coherent_text(10000)]}
+    encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
+    criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
+    errors = calc_error_rates_from_criteria(criteria_1_0_var, [10000], [1])
+    print(f'FP: {errors[10000]['alpha']} \nFN: {errors[10000]['beta']}')
 
 
 if __name__ == '__main__':

@@ -3,7 +3,6 @@ import lzma
 import math
 import random
 import zlib
-from collections import Counter
 
 
 def text_processing(filename, _alphabet):

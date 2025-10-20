@@ -1,5 +1,9 @@
+import bz2
+import lzma
 import math
 import random
+import zlib
+from collections import Counter
 
 
 def text_processing(filename, _alphabet):
@@ -458,48 +462,6 @@ def result_output_matrix(matrix, writefile):
         matrix_filewrite.write(result_row + '\n')
 
 
-def make_clean_texts_by_L(full_text, lengths, overlap=0.5, max_samples_per_L=1000):
-    """
-    Generate clean, non-overlapping text fragments by specified lengths.
-
-    This function divides a given text into fragments of multiple lengths `L`, producing
-    a dictionary {L: [fragments]} for further statistical or cryptographic analysis.
-    Fragments are extracted with partial overlap (default 50%), ensuring that each sample
-    contains exactly `L` valid characters (no trailing whitespace). The total number of
-    samples per length is capped by `max_samples_per_L`.
-
-    :param full_text: str
-        The complete source text to be segmented.
-    :param lengths: list[int]
-        List of fragment lengths L for which to generate samples.
-    :param overlap: float, optional (default=0.5)
-        Fractional overlap between consecutive fragments (0 ≤ overlap < 1).
-        For example, 0.5 means each new fragment starts halfway through the previous one.
-    :param max_samples_per_L: int, optional (default=1000)
-        Maximum number of fragments to generate per length L.
-    :return: dict[int, list[str]]
-        Mapping {L: [clean_fragments]} — for each length, a list of extracted text samples
-        of exact size L without whitespace contamination.
-    """
-
-    clean_texts_by_L = {}
-
-    for L in lengths:
-        step = int(L * (1 - overlap)) or 1
-        samples = []
-
-        for i in range(0, len(full_text) - L, step):
-            fragment = full_text[i:i + L]
-            if len(fragment.strip()) == L:
-                samples.append(fragment)
-            if len(samples) >= max_samples_per_L:
-                break
-
-        clean_texts_by_L[L] = samples
-
-    return clean_texts_by_L
-
-
 def compute_kH_dynamic(clean_texts_by_L, bigrams=False, alpha=0.05):
     """
     Compute dynamic entropy thresholds (H and kH) for Criterion 3.0 based on clean reference texts.
@@ -549,3 +511,61 @@ def compute_kH_dynamic(clean_texts_by_L, bigrams=False, alpha=0.05):
         result_kH[L] = kH
 
     return result_H, result_kH
+
+
+def compute_structural_baseline_random(random_texts_by_L, *, compressor="lzma", alpha=0.05):
+    """
+    Compute dynamic compression baselines (R_L and kC_L) for the Structural criterion
+    using RANDOM reference texts.
+
+    For each length L, this function computes compression ratios r_i for random samples,
+    sets R_L = mean(r_i), and kC_L = quantile(|r_i − R_L|, 1 − α).
+
+    :param random_texts_by_L: dict[int, list[str]]
+        Mapping {L: [random_sample1, random_sample2, ...]} generated over the same alphabet.
+    :param compressor: str, optional (default="lzma")
+        Compression backend: one of {"lzma", "deflate", "bzip2"}.
+    :param alpha: float, optional (default=0.05)
+        Significance level for the deviation quantile (95% band by default).
+    :return: tuple[dict[int, float], dict[int, float]]
+        Two mappings:
+            - R:    {L: baseline compression ratio for random texts of length L}
+            - kC_L: {L: (1 - alpha)-quantile of |r_i - R[L]|}
+    """
+
+    def _compress_ratio_bytes(_b):
+        if not _b:
+            return 1.0
+        if compressor == "lzma":
+            comp = lzma.compress(_b)
+        elif compressor == "deflate":
+            comp = zlib.compress(_b, level=9)
+        elif compressor == "bzip2":
+            comp = bz2.compress(_b, compresslevel=9)
+        else:
+            raise ValueError(f"Unknown compressor: {compressor}")
+        return len(comp) / len(_b)
+
+    R = {}
+    kC_L = {}
+
+    for L, samples in random_texts_by_L.items():
+        ratios = []
+        for s in samples:
+            b = s.encode("utf-8", errors="ignore")
+            ratios.append(_compress_ratio_bytes(b))
+
+        if not ratios:
+            R[L], kC_L[L] = 1.0, 0.0
+            continue
+
+        R_L = sum(ratios) / len(ratios)
+        deltas = sorted(abs(r - R_L) for r in ratios)
+        idx = int((1 - alpha) * (len(deltas) - 1))
+        kC_val = deltas[idx]
+
+        R[L] = R_L
+        kC_L[L] = kC_val
+
+    return R, kC_L
+

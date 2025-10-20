@@ -1,3 +1,6 @@
+import bz2
+import lzma
+import zlib
 import helper as h
 
 
@@ -414,5 +417,82 @@ def criteria_5_1(generated_texts, j, kempt, symbols_frequency=None, bigrams_freq
                 cipher_count += 1
 
         result[length] = (plain_count, cipher_count)
+
+    return result
+
+
+def criteria_structural(generated_texts, compressor="lzma", kC=0.0, baseline_random=None):
+    """
+    Criterion (Structural) — Compression-based test for detecting random/abnormal text.
+
+    Classifies a sequence as H₁ (“random/abnormal”) if it is poorly compressible under a
+    chosen algorithm. With per-length random baselines R_L, a tolerance k_C defines how
+    much better than random a sequence must compress to be considered non-random (H₀).
+
+    Decision rule for a sequence X of length L with compression ratio r(X):
+        If baseline_random[L] is given:
+            Accept H₁  ⇔  r(X) ≥ R_L − k_C(L)
+        Else (global threshold is used):
+            Accept H₁  ⇔  r(X) ≥ k_C
+    Here r(X) = compressed_size(X) / original_size(X) in bytes.
+
+    :param generated_texts: dict[int, list[dict[str, str]]]
+        Mapping {L: [{"plaintext": str, "ciphertext": str}, ...]} to evaluate.
+    :param compressor: str, optional (default="lzma")
+        Compression backend: one of {"lzma", "deflate", "bzip2"}.
+    :param kC: float | dict[int, float], optional (default=0.0)
+        Tolerance for declaring H₁. If dict is provided, uses per-length k_C(L),
+        analogous to kH in Criterion 3.0; otherwise uses a scalar cutoff.
+    :param baseline_random: dict[int, float] | None
+        Optional per-length baselines for random text, {L: R_L}. If omitted, kC is treated
+        as the absolute cutoff.
+
+    :return: dict[int, tuple[int, int]]
+        Mapping {L: (plain_H1_count, cipher_H1_count)} — numbers of plaintexts and ciphertexts
+        classified as H₁ under the rule above.
+    """
+
+    def _compress_ratio(s: str) -> float:
+        data = s.encode("utf-8", errors="ignore")
+        if not data:
+            return 1.0
+        if compressor == "lzma":
+            comp = lzma.compress(data)
+        elif compressor == "deflate":
+            comp = zlib.compress(data, level=9)
+        elif compressor == "bzip2":
+            comp = bz2.compress(data, compresslevel=9)
+        else:
+            raise ValueError(f"Unknown compressor: {compressor}")
+        return len(comp) / len(data)
+
+    def _kC_for(_L):
+        if isinstance(kC, dict):
+            return kC.get(_L, 0.0)
+        return float(kC)
+
+    result = {}
+    for L, pairs in generated_texts.items():
+        R_L = None if baseline_random is None else baseline_random.get(L)
+        kC_L = _kC_for(L)
+
+        plain_h1 = 0
+        cipher_h1 = 0
+        for item in pairs:
+            rp = _compress_ratio(item["plaintext"])
+            rc = _compress_ratio(item["ciphertext"])
+
+            if R_L is not None:
+                if rp >= R_L - kC_L:
+                    plain_h1 += 1
+                if rc >= R_L - kC_L:
+                    cipher_h1 += 1
+            else:
+                if rp >= kC_L:
+                    plain_h1 += 1
+                if rc >= kC_L:
+                    cipher_h1 += 1
+
+        result[L] = (plain_h1, cipher_h1)
 
     return result

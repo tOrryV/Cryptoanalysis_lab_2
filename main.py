@@ -6,7 +6,8 @@ from excel import generate_excel
 
 
 def evaluate_all(encrypted_texts, forbidden_symbols, forbidden_bigrams, symbols_frequency, bigrams_frequency,
-                 H_dynamic_sym, kH_dynamic_sym, H_dynamic_big, kH_dynamic_big, win_len_1_1=2, n_5_1=200, m_5_1=60):
+                 H_dynamic_sym, kH_dynamic_sym, H_dynamic_big, kH_dynamic_big, R, kC_L, win_len_1_1=2, n_5_1=200,
+                 m_5_1=60):
     """
     Run a full suite of criteria (1.0–1.3, 3.0, 5.1) over generated texts and
     collect per-length decision counts for plaintexts and ciphertexts.
@@ -59,14 +60,15 @@ def evaluate_all(encrypted_texts, forbidden_symbols, forbidden_bigrams, symbols_
            "criteria_3_0_sym": c.criteria_3_0(encrypted_texts, H_dynamic_sym, kH_dynamic_sym),
            "criteria_3_0_big": c.criteria_3_0(encrypted_texts, H_dynamic_big, kH_dynamic_big, True),
            "criteria_5_1_sym": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, symbols_frequency),
-           "criteria_5_1_big": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, None, bigrams_frequency)}
+           "criteria_5_1_big": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, None, bigrams_frequency),
+           "criteria_structural": c.criteria_structural(encrypted_texts, 'lzma', kC_L, R)}
 
     return out
 
 
 def _compute_errors_for_encrypted(encrypted, *, forbidden_symbols, forbidden_bigrams, symbols_frequency,
                                   bigrams_frequency, H_dynamic_sym, kH_dynamic_sym, H_dynamic_big, kH_dynamic_big,
-                                  len_texts, count_texts):
+                                  len_texts, count_texts, R, kC_L):
     """
     Evaluate all criteria on encrypted texts and compute Type I/II error rates per length.
 
@@ -112,13 +114,14 @@ def _compute_errors_for_encrypted(encrypted, *, forbidden_symbols, forbidden_big
         kH_dynamic_sym=kH_dynamic_sym,
         H_dynamic_big=H_dynamic_big,
         kH_dynamic_big=kH_dynamic_big,
+        R=R, kC_L=kC_L
     )
     return calc_error_rates_for_all_criteria(all_criteria, len_texts, count_texts)
 
 
 def run_all_generations_errors(*, generated_random_texts, alphabet, len_texts, count_texts, forbidden_symbols,
                                forbidden_bigrams, symbols_frequency, bigrams_frequency, H_dynamic_sym, kH_dynamic_sym,
-                               H_dynamic_big, kH_dynamic_big, vigenere_keys=(1, 5, 10)):
+                               H_dynamic_big, kH_dynamic_big, R, kC_L, vigenere_keys=(1, 5, 10)):
     """
     Run all text-generation/encryption pipelines and compute error rates for each criterion.
 
@@ -176,6 +179,7 @@ def run_all_generations_errors(*, generated_random_texts, alphabet, len_texts, c
             kH_dynamic_big=kH_dynamic_big,
             len_texts=len_texts,
             count_texts=count_texts,
+            R=R, kC_L=kC_L
         )
 
     gens = [
@@ -197,6 +201,7 @@ def run_all_generations_errors(*, generated_random_texts, alphabet, len_texts, c
             kH_dynamic_big=kH_dynamic_big,
             len_texts=len_texts,
             count_texts=count_texts,
+            R=R, kC_L=kC_L
         )
 
     return out
@@ -225,8 +230,13 @@ def main():
 
     bigrams_count_crossing_var = h.bigram_count_crossing(cleaned_data)
     bigrams_frequency = h.bigram_frequency(bigrams_count_crossing_var)
-
     # bigrams_count_not_crossing_var = h.bigram_count_not_crossing(cleaned_data)
+
+    unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
+    forbidden_symbols = unigram_sets['forbidden']
+
+    bigram_sets = h.select_bigram_sets_from_counts(bigrams_count_crossing_var)
+    forbidden_bigrams = bigram_sets['forbidden']
 
     # res_matrix_crossing = h.create_matrix(symbols_frequency, bigrams_count_crossing_var)
     # res_matrix_not_crossing = h.create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
@@ -245,15 +255,9 @@ def main():
     count_texts = [10000, 10000, 10000, 1000]
     generated_random_texts = h.generate_multiple_texts_by_cleaned_text(cleaned_data, len_texts, count_texts)
 
-    unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
-    forbidden_symbols = unigram_sets['forbidden']
-
-    bigram_sets = h.select_bigram_sets_from_counts(bigrams_count_crossing_var)
-    forbidden_bigrams = bigram_sets['forbidden']
-
-    clean_texts_by_L = h.make_clean_texts_by_L(cleaned_data, len_texts)
-    H_dynamic_sym, kH_dynamic_sym = h.compute_kH_dynamic(clean_texts_by_L)
-    H_dynamic_big, kH_dynamic_big = h.compute_kH_dynamic(clean_texts_by_L, True)
+    H_dynamic_sym, kH_dynamic_sym = h.compute_kH_dynamic(generated_random_texts)
+    H_dynamic_big, kH_dynamic_big = h.compute_kH_dynamic(generated_random_texts, True)
+    R, kC_L = h.compute_structural_baseline_random(generated_random_texts, compressor="lzma", alpha=0.05)
 
     all_errors = run_all_generations_errors(
         generated_random_texts=generated_random_texts,
@@ -268,9 +272,10 @@ def main():
         kH_dynamic_sym=kH_dynamic_sym,
         H_dynamic_big=H_dynamic_big,
         kH_dynamic_big=kH_dynamic_big,
+        R=R, kC_L=kC_L
     )
 
-    generate_excel(all_errors, "results/cipher_results_FP_FN.xlsx")
+    generate_excel(all_errors, "results/cipher_results_FP_FN_test.xlsx")
 
     # text_for_analysis = {
     #     10: [gt.generate_of_non_coherent_text(10)]

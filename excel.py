@@ -6,23 +6,34 @@ def _flatten_cipher(cipher_dict):
     Flatten a nested cipher metrics dictionary into a pandas DataFrame with columns
     [L, Criteria, l, FP, FN], suitable for tabular representation and export.
 
-    :param cipher_dict: dict
-        Nested mapping of cipher results:
-        {criteria_key: {L: {"alpha": FP, "beta": FN}, ...}, ...}.
-        Keys must follow the pattern "criteria_x_y_sym" or "criteria_x_y_bigram".
-    :return: pandas.DataFrame
-        DF with columns ["L", "Criteria", "l", "FP", "FN"],
-        sorted by L, Criteria, and l.
+    Supports keys like:
+        - "criteria_1_3_sym", "criteria_1_3_big"
+        - "criteria_structural"
+        - "criteria_structural_sym" / "criteria_structural_big"
     """
 
     rows = []
     for crit_key, sizes in cipher_dict.items():
         parts = crit_key.split('_')
-        if len(parts) < 4 or parts[0] != "criteria":
+        if not parts or parts[0] != "criteria":
             continue
-        criteria = f"{parts[1]}.{parts[2]}"
-        gram = parts[3]
-        lstr = "l=1" if gram == "sym" else "l=2"
+
+        if len(parts) == 4 and parts[1].isdigit() and parts[2].isdigit():
+            criteria = f"{parts[1]}.{parts[2]}"
+            gram = parts[3].lower()
+            lstr = "l=1" if gram in {"sym", "symbol", "symbols"} else "l=2"
+
+        elif len(parts) >= 2 and parts[1].lower() == "structural":
+            criteria = "structural"
+            if len(parts) >= 3 and parts[2].lower() in {"big", "bigram", "bigrams"}:
+                lstr = "l=2"
+            else:
+                lstr = "l=1"
+
+        else:
+            criteria = "_".join(parts[1:]) if len(parts) > 1 else crit_key
+            lstr = "l=1"
+
         for L, vals in sizes.items():
             rows.append({
                 "L": int(L),
@@ -31,8 +42,10 @@ def _flatten_cipher(cipher_dict):
                 "FP": vals.get("alpha"),
                 "FN": vals.get("beta"),
             })
+
     if not rows:
         return pd.DataFrame(columns=["L", "Criteria", "l", "FP", "FN"])
+
     return pd.DataFrame(rows).sort_values(["L", "Criteria", "l"]).reset_index(drop=True)
 
 
@@ -102,6 +115,7 @@ def generate_excel(results, output_path):
             if df.empty:
                 continue
             table = _pivot_df(df)
+            table = table.replace([float('inf'), float('-inf')], None).fillna('')
 
             ws = wb.add_worksheet(cipher_name)
             writer.sheets[cipher_name] = ws

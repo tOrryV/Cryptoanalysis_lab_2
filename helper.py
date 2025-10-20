@@ -435,16 +435,17 @@ def select_bigram_sets_from_counts(counts, forbid_mass=0.0025, popular_coverage=
     return res
 
 
-def result_output(result):
+def result_output(result, per_line=8):
     """
-    Prints key–value pairs line by line in the format:
-    '<key>': <value>
+    Prints key–value pairs compactly in several lines.
+    Each line contains up to `per_line` pairs, formatted as:
+    '<key>': <value>, '<key>': <value>, ...
     :param result: Iterable of (key, value) items to print.
-    :return: None
+    :param per_line: Number of pairs per line.
     """
-
-    for key, value in result:
-        print(f"'{key}': {value}")
+    items = [f"'{k}': {v}" for k, v in result]
+    for i in range(0, len(items), per_line):
+        print(', '.join(items[i:i + per_line]))
 
 
 def result_output_matrix(matrix, writefile):
@@ -569,3 +570,9 @@ def compute_structural_baseline_random(random_texts_by_L, *, compressor="lzma", 
 
     return R, kC_L
 
+
+def pretty_print_list(title, items, per_line=40):
+    print(f"{title}:")
+    for i in range(0, len(items), per_line):
+        print('  ', ', '.join(items[i:i+per_line]))
+    print()

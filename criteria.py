@@ -36,22 +36,17 @@ def criteria_1_0(generated_texts, forbidden_symbols=None, forbidden_bigrams=None
         plain_count = 0
         cipher_count = 0
         for text in texts:
-            if forbidden_bigrams:
-                for bg in forbidden_bigrams:
-                    if bg in text['plaintext']:
-                        plain_count += 1
-                        break
-                    if bg in text['ciphertext']:
-                        cipher_count += 1
-                        break
-            else:
-                if any(symbol in forbidden_symbols for symbol in text['plaintext']):
+            if forbidden_bigrams is not None:
+                if any(bg in text['plaintext'] for bg in forbidden_bigrams):
                     plain_count += 1
-                if any(symbol in forbidden_symbols for symbol in text['ciphertext']):
+                if any(bg in text['ciphertext'] for bg in forbidden_bigrams):
                     cipher_count += 1
-
+            else:
+                if any(ch in forbidden_symbols for ch in text['plaintext']):
+                    plain_count += 1
+                if any(ch in forbidden_symbols for ch in text['ciphertext']):
+                    cipher_count += 1
         result[length] = (plain_count, cipher_count)
-
     return result
 
 
@@ -411,9 +406,9 @@ def criteria_5_1(generated_texts, j, kempt, symbols_frequency=None, bigrams_freq
             f_empty_p = j - len(present_p)
             f_empty_c = j - len(present_c)
 
-            if f_empty_p > kempt:
+            if f_empty_p >= kempt:
                 plain_count += 1
-            if f_empty_c > kempt:
+            if f_empty_c >= kempt:
                 cipher_count += 1
 
         result[length] = (plain_count, cipher_count)

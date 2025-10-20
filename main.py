@@ -209,7 +209,57 @@ def run_all_generations_errors(*, generated_random_texts, alphabet, len_texts, c
 
 def main():
     """
-    To be continued...
+    Main function that implements a full experimental pipeline for analyzing
+    statistical and structural properties of Ukrainian text data, estimating
+    entropy and coincidence indices, and evaluating the performance of
+    cryptographic detection criteria.
+
+    The function performs the following steps:
+
+    1. **Text preprocessing**
+       - Loads multiple Ukrainian text files.
+       - Cleans and normalizes data according to the given alphabet.
+       - Combines all processed texts into a single dataset for analysis.
+
+    2. **Statistical frequency analysis**
+       - Calculates symbol counts and frequencies.
+       - Computes bigram counts (crossing and non-crossing).
+       - Extracts sets of forbidden and popular symbols/bigrams based on frequency thresholds.
+
+    3. **Matrix construction and data export**
+       - Builds normalized frequency matrices for bigrams (crossing / non-crossing).
+       - Saves resulting matrices to text files for visualization and verification.
+
+    4. **Information-theoretic measures**
+       - Computes entropies:
+         * H₁ — single-symbol entropy.
+         * H₂ — bigram entropies (crossing and non-crossing).
+       - Calculates the Index of Coincidence for the cleaned text,
+         providing a baseline measure of randomness.
+
+    5. **Generation of random sequences**
+       - Creates synthetic random texts of various lengths (L = 10, 100, 1000, 10000)
+         to evaluate the robustness of criteria under controlled randomness.
+       - Computes dynamic entropy parameters (H_dynamic, kH_dynamic) for symbols and bigrams.
+       - Establishes structural baselines using compression-based estimators
+         (e.g., LZMA) with significance level α = 0.05.
+
+    6. **Criterion evaluation**
+       - Runs all generation-based tests using different criteria (1.x, 3.0, 5.1, Structural).
+       - Aggregates results and saves the overall error rates (FP/FN)
+         to an Excel report for further comparison.
+
+    7. **Task 5: Special case testing**
+       - Generates a non-coherent (uniform) text consisting of a repeated character.
+       - Encrypts it using the affine cipher.
+       - Applies Criterion 1.0 with forbidden bigrams.
+       - Calculates and prints error metrics:
+         * FP (False Positive rate)
+         * FN (False Negative rate)
+
+    In summary, this function executes the entire experimental workflow:
+    from preprocessing and statistical modeling to criterion-based evaluation
+    and quantitative performance assessment of text coherence detection algorithms.
     """
 
     alphabet = [
@@ -221,35 +271,45 @@ def main():
                  'rechi.txt', 'znedoleni.txt', 'polumya.txt']
 
     cleaned_data = ''
+
     for filename in filenames:
         cleaned_data += h.text_processing('data/' + filename, alphabet)
 
     symbols_count = h.symbol_count(cleaned_data)
     symbols_frequency = h.symbol_frequency(symbols_count)
-    # h.result_output(symbols_frequency)
+    print("===================================== Symbols frequency =====================================")
+    h.result_output(symbols_frequency)
 
     bigrams_count_crossing_var = h.bigram_count_crossing(cleaned_data)
     bigrams_frequency = h.bigram_frequency(bigrams_count_crossing_var)
-    # bigrams_count_not_crossing_var = h.bigram_count_not_crossing(cleaned_data)
+    bigrams_count_not_crossing_var = h.bigram_count_not_crossing(cleaned_data)
 
     unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
     forbidden_symbols = unigram_sets['forbidden']
+    popular_symbols = unigram_sets['popular']
+    print(f'====================== Forbidden and popular symbols ======================\nForbidden symbols:'
+          f' {forbidden_symbols}\nPopular symbols: {popular_symbols}')
 
     bigram_sets = h.select_bigram_sets_from_counts(bigrams_count_crossing_var)
     forbidden_bigrams = bigram_sets['forbidden']
+    popular_bigrams = bigram_sets['popular']
+    print("\n====================== Forbidden and popular bigrams ======================")
+    h.pretty_print_list("Forbidden bigrams", forbidden_bigrams)
+    h.pretty_print_list("Popular bigrams", popular_bigrams)
 
-    # res_matrix_crossing = h.create_matrix(symbols_frequency, bigrams_count_crossing_var)
-    # res_matrix_not_crossing = h.create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
-    # h.result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
-    # h.result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
+    res_matrix_crossing = h.create_matrix(symbols_frequency, bigrams_count_crossing_var)
+    res_matrix_not_crossing = h.create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
+    h.result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
+    h.result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
 
     entropyH1 = h.entropy_calculate(symbols_count)
     entropyH2_cross = h.entropy_calculate(bigrams_count_crossing_var)
-    # entropyH2_not_cross = h.entropy_calculate(bigrams_count_not_crossing_var)
+    entropyH2_not_cross = h.entropy_calculate(bigrams_count_not_crossing_var)
     index_of_coincidence = h.index_of_coincidence(cleaned_data, alphabet)
 
-    # print(f'H1: {entropyH1}\nH2 crossing: {entropyH2_cross}\nH2 not crossing: {entropyH2_not_cross}')
-    # print(f'Index of coincidence for cleaned text: {index_of_coincidence}')
+    print("\n=============== Entropy and Index of coincidence for cleaned text ===============")
+    print(f'H₁ (symbol entropy, reference text): {entropyH1}\nH₂ (crossing bigrams entropy): {entropyH2_cross}\n'
+          f'H₂ (non-crossing bigrams entropy): {entropyH2_not_cross}\nIndex of coincidence: {index_of_coincidence}')
 
     len_texts = [10, 100, 1000, 10000]
     count_texts = [10000, 10000, 10000, 1000]
@@ -278,11 +338,11 @@ def main():
     generate_excel(all_errors, "results/cipher_results_FP_FN_test.xlsx")
 
     print(f'====================== TASK 5 ======================')
-    text_for_analysis = { 10000: [gt.generate_of_non_coherent_text(10000)]}
+    text_for_analysis = {10000: [gt.generate_of_non_coherent_text(10000)]}
     encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
     criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
     errors = calc_error_rates_from_criteria(criteria_1_0_var, [10000], [1])
-    print(f'FP: {errors[10000]['alpha']} \nFN: {errors[10000]['beta']}')
+    print(f'FP: {errors[10000]["alpha"]} \nFN: {errors[10000]["beta"]}')
 
 
 if __name__ == '__main__':

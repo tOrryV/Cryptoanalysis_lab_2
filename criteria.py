@@ -463,7 +463,7 @@ def criteria_structural(generated_texts, compressor="lzma", kC=0.0, baseline_ran
 
     def _kC_for(_L):
         if isinstance(kC, dict):
-            return kC.get(_L, 0.0)
+            return float(kC.get(_L, 0.0))
         return float(kC)
 
     result = {}
@@ -471,23 +471,24 @@ def criteria_structural(generated_texts, compressor="lzma", kC=0.0, baseline_ran
         R_L = None if baseline_random is None else baseline_random.get(L)
         kC_L = _kC_for(L)
 
-        plain_h1 = 0
-        cipher_h1 = 0
+        plain_struct = 0
+        cipher_struct = 0
+
         for item in pairs:
             rp = _compress_ratio(item["plaintext"])
             rc = _compress_ratio(item["ciphertext"])
 
             if R_L is not None:
-                if rp >= R_L - kC_L:
-                    plain_h1 += 1
-                if rc >= R_L - kC_L:
-                    cipher_h1 += 1
+                if rp < R_L - kC_L:
+                    plain_struct += 1
+                if rc < R_L - kC_L:
+                    cipher_struct += 1
             else:
-                if rp >= kC_L:
-                    plain_h1 += 1
-                if rc >= kC_L:
-                    cipher_h1 += 1
+                if rp <= kC_L:
+                    plain_struct += 1
+                if rc <= kC_L:
+                    cipher_struct += 1
 
-        result[L] = (plain_h1, cipher_h1)
+        result[L] = (plain_struct, cipher_struct)
 
     return result

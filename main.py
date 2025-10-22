@@ -47,20 +47,21 @@ def evaluate_all(encrypted_texts, forbidden_symbols, forbidden_bigrams, symbols_
         "criteria_3_0_sym", "criteria_3_0_big", "criteria_5_1_sym", "criteria_5_1_big".
     """
 
-    out = {"criteria_1_0_sym": c.criteria_1_0(encrypted_texts, forbidden_symbols),
-           "criteria_1_0_big": c.criteria_1_0(encrypted_texts, None, forbidden_bigrams),
-           "criteria_1_1_sym": c.criteria_1_1(encrypted_texts, win_len_1_1, forbidden_symbols),
-           "criteria_1_1_big": c.criteria_1_1(encrypted_texts, win_len_1_1, None, forbidden_bigrams),
-           "criteria_1_2_sym": c.criteria_1_2(encrypted_texts, forbidden_symbols, symbols_frequency),
-           "criteria_1_2_big": c.criteria_1_2(encrypted_texts, None, None,
-                                              forbidden_bigrams, bigrams_frequency),
-           "criteria_1_3_sym": c.criteria_1_3(encrypted_texts, forbidden_symbols, symbols_frequency),
-           "criteria_1_3_big": c.criteria_1_3(encrypted_texts, None, None,
-                                              forbidden_bigrams, bigrams_frequency),
-           "criteria_3_0_sym": c.criteria_3_0(encrypted_texts, H_dynamic_sym, kH_dynamic_sym),
-           "criteria_3_0_big": c.criteria_3_0(encrypted_texts, H_dynamic_big, kH_dynamic_big, True),
-           "criteria_5_1_sym": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, symbols_frequency),
-           "criteria_5_1_big": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, None, bigrams_frequency),
+    out = {
+        # "criteria_1_0_sym": c.criteria_1_0(encrypted_texts, forbidden_symbols),
+        #    "criteria_1_0_big": c.criteria_1_0(encrypted_texts, None, forbidden_bigrams),
+        #    "criteria_1_1_sym": c.criteria_1_1(encrypted_texts, win_len_1_1, forbidden_symbols),
+        #    "criteria_1_1_big": c.criteria_1_1(encrypted_texts, win_len_1_1, None, forbidden_bigrams),
+        #    "criteria_1_2_sym": c.criteria_1_2(encrypted_texts, forbidden_symbols, symbols_frequency),
+        #    "criteria_1_2_big": c.criteria_1_2(encrypted_texts, None, None,
+        #                                       forbidden_bigrams, bigrams_frequency),
+        #    "criteria_1_3_sym": c.criteria_1_3(encrypted_texts, forbidden_symbols, symbols_frequency),
+        #    "criteria_1_3_big": c.criteria_1_3(encrypted_texts, None, None,
+        #                                       forbidden_bigrams, bigrams_frequency),
+        #    "criteria_3_0_sym": c.criteria_3_0(encrypted_texts, H_dynamic_sym, kH_dynamic_sym),
+        #    "criteria_3_0_big": c.criteria_3_0(encrypted_texts, H_dynamic_big, kH_dynamic_big, True),
+        #    "criteria_5_1_sym": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, symbols_frequency),
+        #    "criteria_5_1_big": c.criteria_5_1(encrypted_texts, n_5_1, m_5_1, None, bigrams_frequency),
            "criteria_structural": c.criteria_structural(encrypted_texts, 'lzma', kC_L, R)}
 
     return out
@@ -277,39 +278,39 @@ def main():
 
     symbols_count = h.symbol_count(cleaned_data)
     symbols_frequency = h.symbol_frequency(symbols_count)
-    print("===================================== Symbols frequency =====================================")
-    h.result_output(symbols_frequency)
-
+    # print("===================================== Symbols frequency =====================================")
+    # h.result_output(symbols_frequency)
+    #
     bigrams_count_crossing_var = h.bigram_count_crossing(cleaned_data)
     bigrams_frequency = h.bigram_frequency(bigrams_count_crossing_var)
-    bigrams_count_not_crossing_var = h.bigram_count_not_crossing(cleaned_data)
-
+    # bigrams_count_not_crossing_var = h.bigram_count_not_crossing(cleaned_data)
+    #
     unigram_sets = h.select_unigram_sets_from_counts(symbols_count)
     forbidden_symbols = unigram_sets['forbidden']
     popular_symbols = unigram_sets['popular']
-    print(f'====================== Forbidden and popular symbols ======================\nForbidden symbols:'
-          f' {forbidden_symbols}\nPopular symbols: {popular_symbols}')
+    # print(f'====================== Forbidden and popular symbols ======================\nForbidden symbols:'
+    #       f' {forbidden_symbols}\nPopular symbols: {popular_symbols}')
 
     bigram_sets = h.select_bigram_sets_from_counts(bigrams_count_crossing_var)
     forbidden_bigrams = bigram_sets['forbidden']
     popular_bigrams = bigram_sets['popular']
-    print("\n====================== Forbidden and popular bigrams ======================")
-    h.pretty_print_list("Forbidden bigrams", forbidden_bigrams)
-    h.pretty_print_list("Popular bigrams", popular_bigrams)
+    # print("\n====================== Forbidden and popular bigrams ======================")
+    # h.pretty_print_list("Forbidden bigrams", forbidden_bigrams)
+    # h.pretty_print_list("Popular bigrams", popular_bigrams)
 
-    res_matrix_crossing = h.create_matrix(symbols_frequency, bigrams_count_crossing_var)
-    res_matrix_not_crossing = h.create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
-    h.result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
-    h.result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
-
-    entropyH1 = h.entropy_calculate(symbols_count)
-    entropyH2_cross = h.entropy_calculate(bigrams_count_crossing_var)
-    entropyH2_not_cross = h.entropy_calculate(bigrams_count_not_crossing_var)
-    index_of_coincidence = h.index_of_coincidence(cleaned_data, alphabet)
-
-    print("\n=============== Entropy and Index of coincidence for cleaned text ===============")
-    print(f'H₁ (symbol entropy, reference text): {entropyH1}\nH₂ (crossing bigrams entropy): {entropyH2_cross}\n'
-          f'H₂ (non-crossing bigrams entropy): {entropyH2_not_cross}\nIndex of coincidence: {index_of_coincidence}')
+    # res_matrix_crossing = h.create_matrix(symbols_frequency, bigrams_count_crossing_var)
+    # res_matrix_not_crossing = h.create_matrix(symbols_frequency, bigrams_count_not_crossing_var)
+    # h.result_output_matrix(res_matrix_crossing, 'results/bigrams_crossing.txt')
+    # h.result_output_matrix(res_matrix_not_crossing, 'results/bigrams_not_crossing.txt')
+    #
+    # entropyH1 = h.entropy_calculate(symbols_count)
+    # entropyH2_cross = h.entropy_calculate(bigrams_count_crossing_var)
+    # entropyH2_not_cross = h.entropy_calculate(bigrams_count_not_crossing_var)
+    # index_of_coincidence = h.index_of_coincidence(cleaned_data, alphabet)
+    #
+    # print("\n=============== Entropy and Index of coincidence for cleaned text ===============")
+    # print(f'H₁ (symbol entropy, reference text): {entropyH1}\nH₂ (crossing bigrams entropy): {entropyH2_cross}\n'
+    #       f'H₂ (non-crossing bigrams entropy): {entropyH2_not_cross}\nIndex of coincidence: {index_of_coincidence}')
 
     len_texts = [10, 100, 1000, 10000]
     count_texts = [10000, 10000, 10000, 1000]
@@ -337,12 +338,12 @@ def main():
 
     generate_excel(all_errors, "results/cipher_results_FP_FN_test.xlsx")
 
-    print(f'====================== TASK 5 ======================')
-    text_for_analysis = {10000: [gt.generate_of_non_coherent_text(10000)]}
-    encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
-    criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
-    errors = calc_error_rates_from_criteria(criteria_1_0_var, [10000], [1])
-    print(f'FP: {errors[10000]["alpha"]} \nFN: {errors[10000]["beta"]}')
+    # print(f'====================== TASK 5 ======================')
+    # text_for_analysis = {10000: [gt.generate_of_non_coherent_text(10000)]}
+    # encrypted_texts_by_affine = gt.encrypt_texts_by_affine(text_for_analysis, alphabet)
+    # criteria_1_0_var = c.criteria_1_0(encrypted_texts_by_affine, None, forbidden_bigrams)
+    # errors = calc_error_rates_from_criteria(criteria_1_0_var, [10000], [1])
+    # print(f'FP: {errors[10000]["alpha"]} \nFN: {errors[10000]["beta"]}')
 
 
 if __name__ == '__main__':
